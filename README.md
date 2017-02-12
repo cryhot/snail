@@ -54,7 +54,7 @@ B=0
 mill 'echo $B; ++ B; [ $B -lt 10 ] || B=0'
 # I love cyclic variables.
 
-mill 'echo $C; ++ C 9'
+mill '++ C 9; echo $C'
 # Exactly the same thing (9 included).
 
 mill -p 1 python3 myscript.py
