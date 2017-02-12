@@ -1,4 +1,6 @@
 # Snail
+[![License](http://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
+
 :snail: _Make your shell interactive_
 
 ## Installation
@@ -47,7 +49,7 @@ mill 'echo $A'
 
 B=0
 mill 'echo $B; ++ B; [ $B -lt 10 ] || B=0'
-# I love cyclic variables
+# I love cyclic variables.
 
 mill -p 1 python3 myscript.py
 # Wonderfull ! The script I'm working on is executed in real time !

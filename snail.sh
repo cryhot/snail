@@ -12,7 +12,9 @@ function mill() {
     done
     while :; do
         clear
-        echo -ne "\033[01;31mmill\033[00m:\033[01;34m$(pwd)\033[00m$ "
+        local cwd="$(pwd)"
+        [ "$cwd" = "$HOME" ] && cwd="~" || cwd=$(basename $cwd)
+        echo -ne "\033[01;31mmill\033[00m:\033[01;34m${cwd}\033[00m$ "
         echo "$@"
         eval $@
         sleep "$period"
@@ -47,7 +49,7 @@ function scale() {
             __val__=$(cat "$__shared__" 2>/dev/null)
         done
     }&)
-    ({ # push values
+    ({ # push values (could be in foreground if an explicit call to the function with "&" is desired)
     while [ -n "$__val__" ]; do
         echo "$__val__" > "$__shared__"
         read "__val__"
@@ -62,7 +64,7 @@ function ++ {
     echo dummy | read "$1" || {
         echo "not a valid identifier" >&2; return 1
     }
-    [ "${!1}" -eq "${!1}" ] 2>/dev/null || { # is number
+    [ "${!1}" -eq "${!1}" ] 2>/dev/null || {
         echo "\$$1 is NaN" >&2; return 2
     }
     eval $1=$(($1+1))
@@ -73,7 +75,7 @@ function -- {
     echo dummy | read "$1" || {
         echo "not a valid identifier" >&2; return 1
     }
-    [ "${!1}" -eq "${!1}" ] 2>/dev/null || { # is number
+    [ "${!1}" -eq "${!1}" ] 2>/dev/null || {
         echo "\$$1 is NaN" >&2; return 2
     }
     eval $1=$(($1-1))
