@@ -1,39 +1,59 @@
 #!/bin/bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
-[[ $_ == $0 ]] && echo "source this script to load features" >&2 && exit 1
+[[ "$_" == "$0" ]] && echo "source this script to load features" >&2 && exit 1
 
 # mill [-p PERIOD] COMMAND
-function mill() {
-    local period="0.2"
+function mill {
+    local __period__="0.2"
     while [[ $# -gt 1 ]]; do
         local arg="$1"
         case "$arg" in
-            -p|--period) period="$2"; shift ;;
-            *) break ;;
+        -p|--period)
+            __period__="$2"; shift
+            [[ "$__period__" =~ ^[+]?([0-9]*[.]?[0-9]+|[0-9]+[.])([eE][-+]?[0-9]+)?$ ]] || {
+                echo "invalid time interval ‘$__period__’" >&2; return 1
+            } ;;
+        *)
+            break ;;
         esac
         shift
     done
-    local cwd
+    local __cwd__
     while :; do
         clear
-        cwd="$(pwd)"
-        [ "$cwd" = "$HOME" ] && cwd="~" || cwd=$(basename $cwd)
-        echo -ne "\033[01;31mmill\033[00m:\033[01;34m${cwd}\033[00m$ "
+        __cwd__="$(pwd)"
+        [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
+        # echo -ne "\033[01;31mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
+        echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
         echo "$@"
         eval "$@"
-        sleep "$period"
+        sleep "$__period__"
     done
 }
 
 # scale VAR [MIN] [MAX]
-function scale() {
+function scale {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "not a valid identifier" >&2; return 1
+        echo "invalid identifier ‘$1’" >&2; return 1
     }
     local __prev__=${!1}
     local __min__=${2-0}
     local __max__=${3-100}
-    local __val__=$__min__
+    local __val__
+    local __step__=1
+    [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
+        echo "invalid integer expression ‘$__min__" >&2; return 1
+    }
+    [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
+        echo "invalid integer expression ‘$__max__’" >&2; return 1
+    }
+    if [ "$__min__" -gt "$__max__" ]; then
+        __val__="$__min__"
+        __min__="$__max__"
+        __max__="$__val__"
+    fi
+    [ "$__min__" -eq "$__max__" ] && echo "bounds must be different values" >&2 && return 1
+    __val__=$__min__
     [ "$__prev__" -eq "$__prev__" ] 2>/dev/null && __val__=$__prev__
     [ "$__val__" -lt "$__min__" ] && __val__=$__min__
     [ "$__val__" -gt "$__max__" ] && __val__=$__max__
@@ -59,15 +79,16 @@ function scale() {
             echo "$__val__" > "$__shared__"
             read -r "__val__"
         done < <(zenity --scale --print-partial "--text=$1=" "--title=Interactive variable modifier" \
-            "--value=$__val__" "--min-value=$__min__" "--max-value=$__max__" 2>/dev/null)
+            "--value=$__val__" "--min-value=$__min__" "--max-value=$__max__" "--step=$__step__" 2>/dev/null || \
+            ([[ $? != 1 ]] && echo "zenity cannot be launched") >&2)
         rm "$__shared__"
     }&)
 }
 
 # ++ VAR [MAX] [MIN]
 function ++ {
-    echo dummy | read -r "$1" || {
-        echo "not a valid identifier" >&2; return 1
+    echo dummy | read -r "$1" 2>/dev/null || {
+        echo "invalid identifier ‘$1’" >&2; return 1
     }
     local __max__=""
     local __min__=""
@@ -75,6 +96,12 @@ function ++ {
     if [ $# -ge 2 ]; then
         __max__=${2}
         __min__=${3-0}
+        [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
+            echo "invalid integer expression ‘$__max__’" >&2; return 1
+        }
+        [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
+            echo "invalid integer expression ‘$__min__" >&2; return 1
+        }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__="$__min__"
             __min__="$__max__"
@@ -98,8 +125,8 @@ function ++ {
 
 # -- VAR [MAX] [MIN]
 function -- {
-    echo dummy | read -r "$1" || {
-        echo "not a valid identifier" >&2; return 1
+    echo dummy | read -r "$1" 2>/dev/null || {
+        echo "invalid identifier ‘$1’" >&2; return 1
     }
     local __max__=""
     local __min__=""
@@ -107,6 +134,12 @@ function -- {
     if [ $# -ge 2 ]; then
         __max__=${2}
         __min__=${3-0}
+        [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
+            echo "invalid integer expression ‘$__max__’" >&2; return 1
+        }
+        [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
+            echo "invalid integer expression ‘$__min__" >&2; return 1
+        }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__="$__min__"
             __min__="$__max__"
