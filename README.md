@@ -28,11 +28,14 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
   spawn a scale the user can move to set a numeric value to a variable  
   runs in the background
 
-- `++ VAR`  
+- `++ VAR [MAX] [MIN]`  
   increment a variable by one  
+  if one bound is specified, the other one is set to zero by default, and the variable will iterate within the boundaries  
+  an unset variable will be set to the least bound if the last one is defined  
 
-- `-- VAR`  
-  decrement a variable by one  
+- `-- VAR [MAX] [MIN]`  
+  decrement a variable by one, in a way similar to `++`  
+  an unset variable will be set to the greatest bound if the last one is defined  
 
 ### Examples
 
@@ -50,6 +53,9 @@ mill 'echo $A'
 B=0
 mill 'echo $B; ++ B; [ $B -lt 10 ] || B=0'
 # I love cyclic variables.
+
+mill 'echo $C; ++ C 9'
+# Exactly the same thing (9 included).
 
 mill -p 1 python3 myscript.py
 # Wonderfull ! The script I'm working on is executed in real time !

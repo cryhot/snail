@@ -35,7 +35,7 @@ function scale() {
     [ "$__val__" -gt "$__max__" ] && __val__=$__max__
     local __shared__="/dev/shm/scale-$$-$1-$RANDOM"
     echo "$__val__" > "$__shared__"
-    ({ # pull values while file exists
+    ({ # pull values while file exists (drop values when too slow)
         local oldval="not $__val__"
         while [ -n "$__val__" ]; do
             if [ "$__val__" != "$oldval" ]; then
@@ -59,24 +59,66 @@ function scale() {
     }&)
 }
 
-# ++ VAR
+# ++ VAR [MAX] [MIN]
 function ++ {
     echo dummy | read "$1" || {
         echo "not a valid identifier" >&2; return 1
     }
-    [ "${!1}" -eq "${!1}" ] 2>/dev/null || {
+    local __max__=""
+    local __min__=""
+    local __val__
+    if [ $# -ge 2 ]; then
+        __max__=${2}
+        __min__=${3-0}
+        if [ "$__min__" -gt "$__max__" ]; then
+            __val__="$__min__"
+            __min__="$__max__"
+            __max__="$__val__"
+        fi
+        __val__=${!1-$(($__min__-1))}
+    else
+        __val__=${!1}
+    fi
+    [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
         echo "\$$1 is NaN" >&2; return 2
     }
-    eval $1=$(($1+1))
+    __val__=$(($__val__+1))
+    if [ -n "$__max__" ]; then
+        if [ "$__val__" -lt "$__min__" ] || [ "$__val__" -gt "$__max__" ]; then
+            __val__=$__min__
+        fi
+    fi
+    eval $1=$__val__
 }
 
-# -- VAR
+# -- VAR [MAX] [MIN]
 function -- {
     echo dummy | read "$1" || {
         echo "not a valid identifier" >&2; return 1
     }
-    [ "${!1}" -eq "${!1}" ] 2>/dev/null || {
+    local __max__=""
+    local __min__=""
+    local __val__
+    if [ $# -ge 2 ]; then
+        __max__=${2}
+        __min__=${3-0}
+        if [ "$__min__" -gt "$__max__" ]; then
+            __val__="$__min__"
+            __min__="$__max__"
+            __max__="$__val__"
+        fi
+        __val__=${!1-$(($__max__+1))}
+    else
+        __val__=${!1}
+    fi
+    [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
         echo "\$$1 is NaN" >&2; return 2
     }
-    eval $1=$(($1-1))
+    __val__=$(($__val__-1))
+    if [ -n "$__max__" ]; then
+        if [ "$__val__" -lt "$__min__" ] || [ "$__val__" -gt "$__max__" ]; then
+            __val__=$__max__
+        fi
+    fi
+    eval $1=$__val__
 }
