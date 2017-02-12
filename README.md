@@ -13,7 +13,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 ```
 **:warning: If you share your computer with other users, don't forget to remove write perms from the sourced file.**
 
-> Some fonctionalities need special [ptrace permissions](https://www.kernel.org/doc/Documentation/security/Yama.txt). Make sure that the file `/etc/sysctl.d/10-ptrace.conf` contains the line :
+> Some fonctionalities need special [ptrace permissions](https://www.kernel.org/doc/Documentation/security/Yama.txt). If `/proc/sys/kernel/yama/ptrace_scope` contains something other than `0`, make sure that the file `/etc/sysctl.d/10-ptrace.conf` contains the line :
 >
 >     kernel.yama.ptrace_scope = 0
 
