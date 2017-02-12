@@ -1,3 +1,6 @@
+#!/bin/bash
+# Copyright (c) 2017 Jean-Raphaël Gaglione
+[[ $_ == $0 ]] && echo "source this script to load features" >&2 && exit 1
 
 # mill [-p PERIOD] COMMAND
 function mill() {
