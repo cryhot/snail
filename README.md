@@ -3,17 +3,17 @@
 
 ## Installation
 Just download the source :)  
-The code of `snail.sh` must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
+The code of [`snail.sh`](snail.sh) must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
 
 If you want permanent changes, just add this line to your `.bashrc` (admitting you used the repertory `~/snail`) :
 ```sh
     . ~/snail/snail.sh
 ```
-**:warning: If you share your computer with other users, don't forget to remove write perms from the sourced file**
+**:warning: If you share your computer with other users, don't forget to remove write perms from the sourced file.**
 
-Some fonctionalities need special [ptrace permissions](https://www.kernel.org/doc/Documentation/security/Yama.txt). Make sure that the file `/etc/sysctl.d/10-ptrace.conf` contains the line :
-
-    kernel.yama.ptrace_scope = 0
+> Some fonctionalities need special [ptrace permissions](https://www.kernel.org/doc/Documentation/security/Yama.txt). Make sure that the file `/etc/sysctl.d/10-ptrace.conf` contains the line :
+>
+>     kernel.yama.ptrace_scope = 0
 
 ## Usage
 
