@@ -85,7 +85,7 @@ function scale {
     }&)
 }
 
-# ++ VAR [MAX] [MIN]
+# ++ VAR [MIN] [MAX]
 function ++ {
     echo dummy | read -r "$1" 2>/dev/null || {
         echo "invalid identifier ‘$1’" >&2; return 1
@@ -123,7 +123,7 @@ function ++ {
     eval "$1=$__val__"
 }
 
-# -- VAR [MAX] [MIN]
+# -- VAR [MIN] [MAX]
 function -- {
     echo dummy | read -r "$1" 2>/dev/null || {
         echo "invalid identifier ‘$1’" >&2; return 1
