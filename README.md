@@ -22,28 +22,19 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 ### Description
 
 - **`mill [-p PERIOD] COMMAND`**  
-  run a command in loop  
-  _`COMMAND`_ : _the command(s) to execute_  
-  `-p`/`--period` _`PERIOD`_ : _latency between two cycles, in seconds_  
+  run a command in loop ([see more](https://github.com/cryhot/snail/wiki/man-mill))  
 
 - **`scale VAR [MIN] [MAX]`**  
   spawn a scale the user can move to set a numeric value to a variable  
-  runs in the background  
-  _`VAR`_ : _the controled variable_  
-  _`MIN`_,_`MAX`_ : _scale boundaries (order does not matter)_  
+  runs in the background ([see more](https://github.com/cryhot/snail/wiki/man-scale))  
 
 - **`++ VAR [MIN] [MAX]`**  
   increment a variable by one  
-  if one bound is specified, the other one is set to zero by default, and the variable will iterate within the boundaries  
-  an unset variable will be set to the least bound if the last one is defined  
-  _`VAR`_ : _the incremented variable_  
-  _`MIN`_,_`MAX`_ : _range boundaries (order does not matter)_  
+  if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-++))  
 
 - **`-- VAR [MIN] [MAX]`**  
-  decrement a variable by one, in a way similar to `++`  
-  an unset variable will be set to the greatest bound if the last one is defined  
-  _`VAR`_ : _the decremented variable_  
-  _`MIN`_,_`MAX`_ : _range boundaries (order does not matter)_  
+  decrement a variable by one  
+  if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-‐‐))  
 
 ### Examples
 
