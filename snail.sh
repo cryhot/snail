@@ -2,7 +2,7 @@
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 [[ "$_" == "$0" ]] && echo "source this script to load features" >&2 && exit 1
 
-# track [-a] FILE [...]
+# track [-a] FILE...
 function track {
     local -i and=0
     local -i delay=-1
@@ -45,12 +45,12 @@ function track {
             fi
         done
         ((count)) || return 0
-        [ -n "$timeout" ] && (($(date +%s)>timeout)) && return 255
+        [ -n "$timeout" ] && (($(date +%s)>=timeout)) && return 255
         sleep 0.2
     done
 }
 
-# mill [-p PERIOD] COMMAND
+# mill [-p PERIOD] COMMAND...
 function mill {
     local __period__="0.2"
     while [[ $# -ge 1 ]]; do # opts
@@ -221,4 +221,21 @@ function -- {
         fi
     fi
     eval "$1=$__val__"
+}
+
+# mmake [-p PERIOD] [OPTION]... [TARGET]...
+function mmake {
+    local __period__
+    local -i __p__=0
+    case "$1" in
+    -p|--period ) shift; __p__=1
+        __period__="$1"; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+    esac
+    if ((__p__)); then
+        mill -p "__period__" -- make $@
+    else
+        mill -- make $@
+    fi
 }

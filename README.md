@@ -21,7 +21,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 
 ### Description
 
-- **`mill [-p PERIOD] COMMAND`**  
+- **`mill [-p PERIOD] COMMAND...`**  
   run a command in loop ([see more](https://github.com/cryhot/snail/wiki/man-mill))  
 
 - **`scale VAR [MIN] [MAX]`**  
@@ -36,8 +36,11 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
   decrement a variable by one  
   if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-‐‐))  
 
-- **`track [-t/-T TIMEOUT] [-o/-a] FILE [...]`**  
+- **`track [-t/-T TIMEOUT] [-o/-a] FILE...`**  
   pause the script until the file is modified ([see more](https://github.com/cryhot/snail/wiki/man-track))  
+
+- **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
+  basically `mill make` ([see more](https://github.com/cryhot/snail/wiki/man-mmake))  
 
 ### Examples
 
