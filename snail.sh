@@ -242,7 +242,7 @@ function mmake {
     fi
 }
 
-. "$(dirname $BASH_SOURCE)/avatar.sh"
+. "$(dirname $BASH_SOURCE)/boris.sh"
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clear" EXIT
     cd "$(dirname "$0")"
