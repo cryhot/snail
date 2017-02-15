@@ -1,6 +1,5 @@
 #!/bin/bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
-[[ "$_" == "$0" ]] && echo "source this script to load features" >&2 && exit 1
 
 # track [-a] FILE...
 function track {
@@ -64,16 +63,15 @@ function mill {
         * ) break ;;
         esac
     done
-    local __cwd__
     local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
     ({ # cleaner
         while kill -s 0 $$; do
-            sleep 10
+            sleep 9
         done
         rm "$__buffer__"
     }&) >/dev/null 2>&1
+    local __cwd__
     while true; do
-        #
         __cwd__="$(pwd)"
         [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
         # echo -ne "\033[01;31mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
@@ -179,10 +177,12 @@ function ++ {
     ((__val__+=1))
     if [ -n "$__max__" ]; then
         if [ "$__val__" -lt "$__min__" ] || [ "$__val__" -gt "$__max__" ]; then
-            __val__=$__min__
+            eval "$1=$__min__"
+            return 255
         fi
     fi
     eval "$1=$__val__"
+    return 0
 }
 
 # -- VAR [MIN] [MAX]
@@ -217,10 +217,12 @@ function -- {
     ((__val__-=1))
     if [ -n "$__max__" ]; then
         if [ "$__val__" -lt "$__min__" ] || [ "$__val__" -gt "$__max__" ]; then
-            __val__=$__max__
+            eval "$1=$__max__"
+            return 255
         fi
     fi
     eval "$1=$__val__"
+    return 0
 }
 
 # mmake [-p PERIOD] [OPTION]... [TARGET]...
@@ -230,12 +232,28 @@ function mmake {
     case "$1" in
     -p|--period ) shift; __p__=1
         __period__="$1"; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
+    -- ) shift; ;;
+    * ) ;;
     esac
     if ((__p__)); then
-        mill -p "__period__" -- make $@
+        mill -p "__period__" -- make "$@"
     else
-        mill -- make $@
+        mill -- make "$@"
     fi
 }
+
+. "$(dirname $BASH_SOURCE)/avatar.sh"
+if [[ "$BASH_SOURCE" == "$0" ]]; then
+    trap "clear" EXIT
+    cd "$(dirname "$0")"
+    while true; do
+        ++ FRAME 1 || ++ X -19 "$(tput cols)"
+        clear
+        echo
+        snail "$FRAME" "$X"
+        echo
+        echo ">>> source this script to load features"
+        sleep 0.1
+    done
+    echo "source this script to load features" >&2 && exit 1
+fi
