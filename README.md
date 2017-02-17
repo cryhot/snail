@@ -22,25 +22,25 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 ### Description
 
 - **`mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-C CONDITION] COMMAND...`**  
-  run a command in loop ([see more](https://github.com/cryhot/snail/wiki/man-mill))  
+  run a command in loop ([see more][man mill])  
 
 - **`scale VAR [MIN] [MAX]`**  
   spawn a scale the user can move to set a numeric value to a variable  
-  runs in the background ([see more](https://github.com/cryhot/snail/wiki/man-scale))  
+  runs in the background ([see more][man scale])  
 
 - **`++ VAR [MIN] [MAX]`**  
   increment a variable by one  
-  if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-++))  
+  if bounds are specified, switch to modular arithmetic ([see more][man ++])  
 
 - **`-- VAR [MIN] [MAX]`**  
   decrement a variable by one  
-  if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-‐‐))  
+  if bounds are specified, switch to modular arithmetic ([see more][man --])  
 
 - **`track [-t|-T TIMEOUT] [-o|-a] FILE...`**  
-  pause the script until the file is modified ([see more](https://github.com/cryhot/snail/wiki/man-track))  
+  pause the script until the file is modified ([see more][man track])  
 
 - **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
-  basically `mill make` ([see more](https://github.com/cryhot/snail/wiki/man-mmake))  
+  basically `mill make` ([see more][man mmake])  
 
 ### Examples
 
@@ -78,3 +78,13 @@ mill -C 'track *.java' 'snail; javac *.java'
 
 -----
 _French people love snails_
+
+
+
+[man mill]:  https://github.com/cryhot/snail/wiki/man-mill  "man mill"
+[man scale]: https://github.com/cryhot/snail/wiki/man-scale "man scale"
+[man ++]:    https://github.com/cryhot/snail/wiki/man-++    "man ++"
+[man --]:    https://github.com/cryhot/snail/wiki/man-‐‐    "man --"
+[man track]: https://github.com/cryhot/snail/wiki/man-track "man track"
+[man mmake]: https://github.com/cryhot/snail/wiki/man-mmake "man mmake"
+[man snail]: https://github.com/cryhot/snail/wiki/man-snail "man snail"
