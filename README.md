@@ -21,7 +21,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 
 ### Description
 
-- **`mill [-p PERIOD] COMMAND...`**  
+- **`mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-C CONDITION] COMMAND...`**  
   run a command in loop ([see more](https://github.com/cryhot/snail/wiki/man-mill))  
 
 - **`scale VAR [MIN] [MAX]`**  
@@ -36,7 +36,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
   decrement a variable by one  
   if bounds are specified, switch to modular arithmetic ([see more](https://github.com/cryhot/snail/wiki/man-‐‐))  
 
-- **`track [-t/-T TIMEOUT] [-o/-a] FILE...`**  
+- **`track [-t|-T TIMEOUT] [-o|-a] FILE...`**  
   pause the script until the file is modified ([see more](https://github.com/cryhot/snail/wiki/man-track))  
 
 - **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
@@ -68,6 +68,12 @@ mill -p 1 python3 myscript.py
 scale A 0 10
 mill -p 1 'python3 myscript.py $A'
 # Even better !
+
+mill -C 'track *.java' 'javac *.java'
+# Compile everything !
+
+mill -C 'track *.java' 'snail; javac *.java'
+# ...with a little helper
 ```
 
 -----

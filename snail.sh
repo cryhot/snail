@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
-# track [-a] FILE...
+# track [-t|-T TIMEOUT] [-o|-a]  FILE...
 function track {
     local -i and=0
     local -i delay=-1
@@ -49,9 +49,12 @@ function track {
     done
 }
 
-# mill [-p PERIOD] COMMAND...
+# mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-C CONDITION] COMMAND...
 function mill {
-    local __period__="0.2"
+    local __period__ __mode__
+    local __timeout__
+    local __condition__="false"
+    local -i __CONDS__=0
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
         -p|--period ) shift
@@ -59,29 +62,75 @@ function mill {
                 echo "invalid time interval ‘$1’" >&2; return 1
             }
             __period__="$1"; shift ;;
+        -i|--instant ) shift
+            __period__=0 ;;
+        -T|--timeout ) shift
+            [ "$1" -ge "0" ] 2>/dev/null || {
+                echo "invalid positive integer expression ‘$1’" >&2; return 1
+            }
+            __timeout__="$1"; shift; __CONDS__=1 ;;
+        -C|--condition ) shift
+            __condition__="$1"; shift; __CONDS__=1 ;;
+        -q|--quiet ) shift
+            __mode__=0 ;;
+        -b|--unbuffered ) shift
+            __mode__=1 ;;
+        -B|--buffered ) shift
+            __mode__=2 ;;
         -- ) shift; break ;;
         * ) break ;;
         esac
     done
+    [ -t 1 ] || __mode__=${__mode__-0} # non interactive
+    if ! ((__CONDS__)); then # no conditions
+        __period__=${__period__-0.2}
+        __timeout__=${__timeout__-0}
+        __mode__=${__mode__-2}
+    else # conditions specified
+        __period__=${__period__-0}
+        __mode__=${__mode__-1}
+    fi
     local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
-    ({ # cleaner
+    local -r __period__ __mode__ __timeout__ __condition__
+    ((__mode__==2)) && ({ # cleaner
         while kill -s 0 $$; do
             sleep 9
         done
         rm "$__buffer__"
     }&) >/dev/null 2>&1
-    local __cwd__
+    local __cwd__ __time_out__
     while true; do
-        __cwd__="$(pwd)"
-        [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
-        # echo -ne "\033[01;31mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
-        echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ " > "$__buffer__"
-        echo "$@" >> "$__buffer__"
-        eval -- "$@" >> "$__buffer__" 2>&1 # TODO: try a PTY
-        clear
-        cat "$__buffer__"
-        rm "$__buffer__" # not absolute
-        sleep "$__period__"
+        [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
+        ((__mode__>0)) && {
+            __cwd__="$(pwd)"
+            [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
+        }
+        case $__mode__ in
+        0 ) # QUIET
+            eval -- "$@"
+            ;;
+        1 ) # UNBUFFERED
+            clear
+            echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
+            echo "$@"
+            eval -- "$@"
+            ;;
+        2 ) # BUFFERED
+            {
+                echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
+                echo "$@"
+                eval -- "$@" 2>&1 # TODO: try a PTY
+            } > "$__buffer__"
+            clear
+            cat "$__buffer__"
+            rm "$__buffer__" # does not always works
+            ;;
+        esac
+        while true; do
+            sleep "$__period__"
+            [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
+            eval "$__condition__" && break
+        done
     done
 }
 rm /dev/shm/mill-$$-* 2>/dev/null
@@ -228,21 +277,18 @@ function -- {
 # mmake [-p PERIOD] [OPTION]... [TARGET]...
 function mmake {
     local __period__
-    local -i __p__=0
-    case "$1" in
-    -p|--period ) shift; __p__=1
-        __period__="$1"; shift ;;
-    -- ) shift; ;;
-    * ) ;;
-    esac
-    if ((__p__)); then
-        mill -p "__period__" -- make "$@"
-    else
-        mill -- make "$@"
-    fi
+    while [[ $# -ge 1 ]]; do # opts
+        case "$1" in
+        -p|--period ) shift;
+            __period__="$1"; shift ;;
+        -- ) shift; break ;;
+        * ) break ;;
+        esac
+    done
+    mill -p "${__period__-0.2}" -- make "$@"
 }
 
-. "$(dirname $BASH_SOURCE)/boris.sh"
+. "$(dirname "$BASH_SOURCE")/boris.sh"
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clear" EXIT
     cd "$(dirname "$0")"
