@@ -98,7 +98,7 @@ function mill {
         done
         rm "$__buffer__"
     }&) >/dev/null 2>&1
-    local __cwd__ __time_out__
+    local __cwd__ __first_line__ __line__ __time_out__
     while true; do
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
         ((__mode__>0)) && {
@@ -111,14 +111,24 @@ function mill {
             ;;
         1 ) # UNBUFFERED
             clear
+            __first_line__="yes"
             echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
-            echo "$@"
+            while IFS='' read -r __line__; do
+                [ -n "$__line__" ] || continue
+                [ -n "$__first_line__" ] && __first_line__="" || echo -ne "> "
+                echo "$__line__"
+            done <<< "$@"
             eval -- "$@"
             ;;
         2 ) # BUFFERED
             {
+                __first_line__="yes"
                 echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
-                echo "$@"
+                while IFS='' read -r __line__; do
+                    [ -n "$__line__" ] || continue
+                    [ -n "$__first_line__" ] && __first_line__="" || echo -ne "> "
+                    echo "$__line__"
+                done <<< "$@"
                 eval -- "$@" 2>&1 # TODO: try a PTY
             } > "$__buffer__"
             clear
@@ -292,14 +302,14 @@ function mmake {
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clear" EXIT
     cd "$(dirname "$0")"
-    while true; do
-        ++ FRAME 1 || ++ X -19 "$(tput cols)"
+    # shellcheck disable=SC2016
+    mill -q -p 0.1 '
+        ++ FRAME 1 || ++ X -19 $(tput cols)
         clear
         echo
-        snail "$FRAME" "$X"
+        snail $FRAME $X
         echo
         echo ">>> source this script to load features"
-        sleep 0.1
-    done
-    echo "source this script to load features" >&2 && exit 1
+    '
+    # echo "source this script to load features" >&2 && exit 1
 fi
