@@ -1,6 +1,10 @@
 #!/bin/bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
+[[ "$BASH_SOURCE" == "$0" ]] || {
+    nohup "$(dirname "$BASH_SOURCE")/clean.sh" --wait $$ >/dev/null 2>&1 &
+}
+
 # track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
 function track {
     local -i and=0
@@ -74,7 +78,7 @@ function track {
 function mill {
     local __period__ __mode__
     local __timeout__
-    local __condition__="false"
+    local -a __conditions__=()
     local -i __CONDS__=0
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
@@ -85,13 +89,13 @@ function mill {
             __period__="$1"; shift ;;
         -i|--instant ) shift
             __period__=0 ;;
-        -T|--timeout ) shift
+        -T|--timeout ) shift; __CONDS__=1
             [ "$1" -ge "0" ] 2>/dev/null || {
                 echo "invalid positive integer expression ‘$1’" >&2; return 1
             }
-            __timeout__="$1"; shift; __CONDS__=1 ;;
-        -C|--condition ) shift
-            __condition__="$1"; shift; __CONDS__=1 ;;
+            __timeout__="$1"; shift ;;
+        -C|--condition ) shift; __CONDS__=1
+            __conditions__[${#__conditions__[@]}]="$1"; shift ;;
         -q|--quiet ) shift
             __mode__=0 ;;
         -b|--unbuffered ) shift
@@ -112,14 +116,14 @@ function mill {
         __mode__=${__mode__-1}
     fi
     local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
-    local -r __period__ __mode__ __timeout__ __condition__
-    ((__mode__==2)) && ({ # cleaner
-        while kill -s 0 $$; do
-            sleep 9
-        done
-        rm "$__buffer__"
-    }&) >/dev/null 2>&1
-    local __cwd__ __first_line__ __line__ __time_out__
+    local -r __period__ __mode__ __timeout__ __conditions__
+    # ((__mode__==2)) && ({ # cleaner
+    #     while kill -s 0 $$; do
+    #         sleep 9
+    #     done
+    #     rm "$__buffer__"
+    # }&) >/dev/null 2>&1
+    local __cwd__ __first_line__ __line__ __time_out__ __condition__
     while true; do
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
         ((__mode__>0)) && {
@@ -154,17 +158,18 @@ function mill {
             } > "$__buffer__"
             clear
             cat "$__buffer__"
-            rm "$__buffer__" # does not always works
+            rm "$__buffer__" # does not works if interrupted
             ;;
         esac
         while true; do
             sleep "$__period__"
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
-            eval "$__condition__" && break
+            for __condition__ in false "${__conditions__[@]}"; do
+                eval "$__condition__" && break
+            done && break
         done
     done
 }
-rm /dev/shm/mill-$$-* 2>/dev/null
 
 # scale VAR [MIN] [MAX]
 function scale {
@@ -223,7 +228,6 @@ function scale {
             ([[ $? != 1 ]] && echo "zenity cannot be launched") >&2)
     }&)
 }
-rm /dev/shm/scale-$$-* 2>/dev/null
 
 # ++ VAR [MIN] [MAX]
 function ++ {
