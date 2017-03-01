@@ -21,7 +21,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 
 ### Description
 
-- **`mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-C CONDITION] COMMAND...`**  
+- **`mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...`**  
   run a command in loop ([see more][man mill])  
 
 - **`scale VAR [MIN] [MAX]`**  

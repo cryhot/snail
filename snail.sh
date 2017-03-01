@@ -74,11 +74,12 @@ function track {
     done
 }
 
-# mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-C CONDITION] COMMAND...
+# mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...
 function mill {
     local __period__ __mode__
     local __timeout__
     local -a __conditions__=()
+    local -a __tracked_files__=()
     local -i __CONDS__=0
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
@@ -94,6 +95,8 @@ function mill {
                 echo "invalid positive integer expression ‘$1’" >&2; return 1
             }
             __timeout__="$1"; shift ;;
+        -F|--track-file ) shift; __CONDS__=1
+            __tracked_files__[${#__tracked_files__[@]}]="$1"; shift ;;
         -C|--condition ) shift; __CONDS__=1
             __conditions__[${#__conditions__[@]}]="$1"; shift ;;
         -q|--quiet ) shift
@@ -123,9 +126,21 @@ function mill {
     #     done
     #     rm "$__buffer__"
     # }&) >/dev/null 2>&1
-    local __cwd__ __first_line__ __line__ __time_out__ __condition__
+    local __cwd__ __first_line__ __line__ __time_out__
+    local __file__ __condition__ # iterators
+    local -i __change__
+    local -a __files__ __files2__
+    local -A __file_modif__
     while true; do
+        # TRACK CONDITIONS
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
+        __file_modif__=()
+        eval "$(shopt -s nullglob; __files__=(${__tracked_files__[@]}); \
+            declare -p __files__)" || __files__=()
+        for __file__ in "${__files__[@]}"; do
+            __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
+        done
+        # EXECUTE COMMAND
         ((__mode__>0)) && {
             __cwd__="$(pwd)"
             [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
@@ -161,13 +176,32 @@ function mill {
             rm "$__buffer__" # does not works if interrupted
             ;;
         esac
+        # LATENCY STAGE
         while true; do
             sleep "$__period__"
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
-            for __condition__ in false "${__conditions__[@]}"; do
-                eval "$__condition__" && break
-            done && break
+            __change__=0
+            for __file__ in "${!__file_modif__[@]}"; do
+                [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null || {
+                    __change__=1 && break
+                }
+            done
+            ((__change__)) && break
+            eval "$(shopt -s nullglob; __files2__=(${__tracked_files__[@]}); \
+                declare -p __files2__)" || __files2__=()
+            [ ${#__files2__[@]} -eq ${#__files__[@]} ] || break
+            for __file__ in "${!__files__[@]}"; do
+                [ "${__files2__[$__file__]}" = "${__files__[$__file__]}" ] || {
+                    __change__=1 && break
+                }
+            done
+            ((__change__)) && break
+            for __condition__ in "${__conditions__[@]}"; do
+                eval "$__condition__" && __change__=1 && break
+            done
+            ((__change__)) && break
         done
+        # END OF CYCLE
     done
 }
 
