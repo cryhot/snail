@@ -1,15 +1,18 @@
 #!/bin/bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
-# track [-t|-T TIMEOUT] [-o|-a]  FILE...
+# track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
 function track {
     local -i and=0
+    local -i glob=0
     local -i delay=-1
     local timeout=""
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
         -o|--or ) shift; and=0 ;;
         -a|--and ) shift; and=1 ;;
+        -g|--glob ) shift; glob=1 ;;
+        -w|--wildcard ) shift; glob=1 ;;
         -t|--timeout ) shift
             [ "$1" -ge "0" ] 2>/dev/null || {
                 echo "invalid positive integer expression ‘$1’" >&2; return 1
@@ -24,14 +27,24 @@ function track {
         * ) break ;;
         esac
     done
+    local -a files
     local -A modif
-    local file
-    for file in "$@"; do
+    if ((glob)); then
+        eval "$(shopt -s nullglob; files=($@); declare -p files)"
+    else
+        files=("$@")
+    fi
+    if [[ $# -lt 1 ]]; then
+        files=(./*)
+        glob=1
+    fi
+    for file in "${files[@]}"; do
         modif[$file]=$(stat -c "%Z" "$file" 2>/dev/null) # || {
         #     echo "cannot track ‘$file’" >&2 ; return 1
         # }
     done
     [ -n "$timeout" ] && ((timeout+=$(date +%s)))
+    local list
     ((delay>=0)) && sleep "$delay" && timeout=${timeout:-0}
     local -i count
     while true; do
@@ -44,6 +57,14 @@ function track {
             fi
         done
         ((count)) || return 0
+        if ((glob && ! and)); then
+            eval "$(shopt -s nullglob; list=($@); declare -p list)"
+            [[ $# -lt 1 ]] && list=(./*)
+            [ ${#list[@]} -eq ${#files[@]} ] || return 0
+            for file in "${!files[@]}"; do
+                [ "${list[$file]}" = "${files[$file]}" ] || return 0
+            done
+        fi
         [ -n "$timeout" ] && (($(date +%s)>=timeout)) && return 255
         sleep 0.2
     done

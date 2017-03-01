@@ -36,7 +36,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
   decrement a variable by one  
   if bounds are specified, switch to modular arithmetic ([see more][man --])  
 
-- **`track [-t|-T TIMEOUT] [-o|-a] FILE...`**  
+- **`track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...`**  
   pause the script until the file is modified ([see more][man track])  
 
 - **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
