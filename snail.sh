@@ -110,16 +110,15 @@ function mill {
         esac
     done
     [ -t 1 ] || __mode__=${__mode__-0} # non interactive
+    __period__=${__period__-0.2}
     if ! ((__CONDS__)); then # no conditions
-        __period__=${__period__-0.2}
-        __timeout__=${__timeout__-0}
         __mode__=${__mode__-2}
     else # conditions specified
-        __period__=${__period__-0}
         __mode__=${__mode__-1}
     fi
     local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
-    local -r __period__ __mode__ __timeout__ __conditions__
+    local -r __period__ __mode__
+    local -r __CONDS__ __timeout__ __tracked_files__ __conditions__
     # ((__mode__==2)) && ({ # cleaner
     #     while kill -s 0 $$; do
     #         sleep 9
@@ -131,9 +130,12 @@ function mill {
     local -i __change__
     local -a __files__ __files2__
     local -A __file_modif__
+    # CYCLE
     while true; do
         # TRACK CONDITIONS
+        # track `-T`
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
+        # track `-F`
         __file_modif__=()
         eval "$(shopt -s nullglob; __files__=(${__tracked_files__[@]}); \
             declare -p __files__)" || __files__=()
@@ -178,8 +180,9 @@ function mill {
         esac
         # LATENCY STAGE
         while true; do
-            sleep "$__period__"
+            # test `-T`
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
+            # test `-F`
             __change__=0
             for __file__ in "${!__file_modif__[@]}"; do
                 [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null || {
@@ -195,11 +198,15 @@ function mill {
                     __change__=1 && break
                 }
             done
+            # test `-C`
             ((__change__)) && break
             for __condition__ in "${__conditions__[@]}"; do
                 eval "$__condition__" && __change__=1 && break
             done
             ((__change__)) && break
+            # wait `PERIOD`
+            sleep "$__period__"
+            ((__CONDS__)) || break
         done
         # END OF CYCLE
     done
