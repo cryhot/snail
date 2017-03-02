@@ -5,6 +5,9 @@
     nohup "$(dirname "$BASH_SOURCE")/clean.sh" --wait $$ >/dev/null 2>&1 &
 }
 
+export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
+export MPS2=${MPS2-'\[\e[01;38;5;202m\]>\[\e[m\] '}
+
 # track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
 function track {
     local -i and=0
@@ -33,6 +36,7 @@ function track {
     done
     local -a files
     local -A modif
+    # RECORD INFOS
     if ((glob)); then
         eval "$(shopt -s nullglob; files=($@); declare -p files)"
     else
@@ -49,6 +53,7 @@ function track {
     done
     [ -n "$timeout" ] && ((timeout+=$(date +%s)))
     local list
+    # TRACK CHANGES
     ((delay>=0)) && sleep "$delay" && timeout=${timeout:-0}
     local -i count
     while true; do
@@ -125,17 +130,17 @@ function mill {
     #     done
     #     rm "$__buffer__"
     # }&) >/dev/null 2>&1
-    local __cwd__ __first_line__ __line__ __time_out__
+    local __ps1__ __ps2__ __first_line__ __line__ __time_out__
     local __file__ __condition__ # iterators
     local -i __change__
     local -a __files__ __files2__
     local -A __file_modif__
     # CYCLE
     while true; do
-        # TRACK CONDITIONS
-        # track `-T`
+        # RECORD CONDITIONS INFOS
+        # record `-T`
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
-        # track `-F`
+        # record `-F`
         __file_modif__=()
         eval "$(shopt -s nullglob; __files__=(${__tracked_files__[@]}); \
             declare -p __files__)" || __files__=()
@@ -143,32 +148,31 @@ function mill {
             __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
         done
         # EXECUTE COMMAND
-        ((__mode__>0)) && {
-            __cwd__="$(pwd)"
-            [ "$__cwd__" = "$HOME" ] && __cwd__="~" || __cwd__=$(basename $__cwd__)
-        }
+        unset __first_line__
         case $__mode__ in
         0 ) # QUIET
             eval -- "$@"
             ;;
         1 ) # UNBUFFERED
             clear
-            __first_line__="yes"
-            echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
+            __ps1__=$(PS1="$MPS1" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
+            __ps2__=$(PS1="$MPS2" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
+            echo -n "$__ps1__"
             while IFS='' read -r __line__; do
                 [ -n "$__line__" ] || continue
-                [ -n "$__first_line__" ] && __first_line__="" || echo -ne "> "
+                [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                 echo "$__line__"
             done <<< "$@"
             eval -- "$@"
             ;;
         2 ) # BUFFERED
             {
-                __first_line__="yes"
-                echo -ne "\033[01;38;5;202mmill\033[00m:\033[01;34m${__cwd__}\033[00m$ "
+                __ps1__=$(PS1="$MPS1" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
+                __ps2__=$(PS1="$MPS2" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
+                echo -n "$__ps1__"
                 while IFS='' read -r __line__; do
                     [ -n "$__line__" ] || continue
-                    [ -n "$__first_line__" ] && __first_line__="" || echo -ne "> "
+                    [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                     echo "$__line__"
                 done <<< "$@"
                 eval -- "$@" 2>&1 # TODO: try a PTY
