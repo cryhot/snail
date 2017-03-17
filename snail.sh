@@ -8,6 +8,7 @@
 export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
 export MPS2=${MPS2-'\[\e[01;38;5;202m\]>\[\e[m\] '}
 
+
 # track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
 function track {
     local -i and=0
@@ -78,6 +79,7 @@ function track {
         sleep 0.2
     done
 }
+
 
 # mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...
 function mill {
@@ -216,6 +218,7 @@ function mill {
     done
 }
 
+
 # scale VAR [MIN] [MAX]
 function scale {
     echo dummy | read -r "$1" 2>/dev/null || {
@@ -274,6 +277,7 @@ function scale {
     }&)
 }
 
+
 # ++ VAR [MIN] [MAX]
 function ++ {
     echo dummy | read -r "$1" 2>/dev/null || {
@@ -313,6 +317,7 @@ function ++ {
     eval "$1=$__val__"
     return 0
 }
+
 
 # -- VAR [MIN] [MAX]
 function -- {
@@ -354,6 +359,7 @@ function -- {
     return 0
 }
 
+
 # mmake [-p PERIOD] [OPTION]... [TARGET]...
 function mmake {
     local __period__
@@ -368,7 +374,11 @@ function mmake {
     mill -p "${__period__-0.2}" -- make "$@"
 }
 
+
 . "$(dirname "$BASH_SOURCE")/boris.sh"
+
+. "$(dirname "$BASH_SOURCE")/completion.sh"
+
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clear" EXIT
     cd "$(dirname "$0")"
