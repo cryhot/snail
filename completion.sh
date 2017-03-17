@@ -28,6 +28,11 @@ function _intvar_abstract {
 
 # track completion
 function _track {
+    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+        [ -e "/usr/share/bash-completion/bash_completion" ] &&
+            source "/usr/share/bash-completion/bash_completion"
+    fi
+
     local -i i
     local arg=""
     local CUR
@@ -64,6 +69,11 @@ function _track {
 
 # mill completion
 function _mill {
+    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+        [ -e "/usr/share/bash-completion/bash_completion" ] &&
+            source "/usr/share/bash-completion/bash_completion"
+    fi
+
     local -i i
     local arg=""
     local CUR
@@ -117,8 +127,11 @@ function _increment {
 # mmake completion
 function _mmake {
     local OK_MAKE=0
-    [ -e "/usr/share/bash-completion/completions/make" ] && OK_MAKE=1 &&
-        source "/usr/share/bash-completion/completions/make"
+    if [ -z "$(declare -pf _make 2>/dev/null)" ]; then
+        [ -e "/usr/share/bash-completion/completions/make" ] && OK_MAKE=1 &&
+            source "/usr/share/bash-completion/completions/make"
+    fi
+
     local -i i
     local arg=""
     local CUR
