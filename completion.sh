@@ -28,6 +28,7 @@ function _intvar_abstract {
 
 # track completion
 function _track {
+    # shellcheck disable=SC2034
     if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
@@ -39,13 +40,16 @@ function _track {
     for (( i=1; i <= COMP_CWORD; i++ )); do
         case "$arg" in
         esac
-        [ -n "$arg" ] && arg="" && continue
+        if [ -n "$arg" ]; then
+            arg=""
+            ((i < COMP_CWORD)) && continue || return
+        fi
         CUR="${COMP_WORDS[i]}"
         case "$CUR" in
         --* )
             if ((i < COMP_CWORD)); then
                 case "$CUR" in
-                -- ) _minimal; return ;;
+                -- ) i+=1; break ;;
                 --timeout ) arg="t" ;;
                 --delay )   arg="T" ;;
                 esac
@@ -61,14 +65,17 @@ function _track {
             fi ;;
         -*[tT] ) arg="${CUR: -1}" ;;
         -* ) ;;
-        * ) _minimal; return ;;
+        * ) break ;;
         esac
+        ((i < COMP_CWORD)) || return
     done
+    _minimal
 }
 
 
 # mill completion
 function _mill {
+    # shellcheck disable=SC2034
     if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
@@ -80,14 +87,18 @@ function _mill {
     for (( i=1; i <= COMP_CWORD; i++ )); do
         case "$arg" in
         F ) ((i == COMP_CWORD)) && _minimal ;;
+        C ) ((i == COMP_CWORD)) && _command_offset $i ;;
         esac
-        [ -n "$arg" ] && arg="" && continue
+        if [ -n "$arg" ]; then
+            arg=""
+            ((i < COMP_CWORD)) && continue || return
+        fi
         CUR="${COMP_WORDS[i]}"
         case "$CUR" in
         --* )
             if ((i < COMP_CWORD)); then
                 case "$CUR" in
-                -- ) _command_offset $((i+1)); return ;;
+                -- ) i+=1; break ;;
                 --period )     arg="p" ;;
                 --timeout )    arg="T" ;;
                 --track-file ) arg="F" ;;
@@ -107,9 +118,11 @@ function _mill {
             fi ;;
         -*[pTFC] ) arg="${CUR: -1}" ;;
         -* ) ;;
-        * ) _command_offset $i; return ;;
+        * ) break ;;
         esac
+        ((i < COMP_CWORD)) || return
     done
+    _command_offset $i
 }
 
 
@@ -127,6 +140,7 @@ function _increment {
 # mmake completion
 function _mmake {
     local OK_MAKE=0
+    # shellcheck disable=SC2034
     if [ -z "$(declare -pf _make 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/completions/make" ] && OK_MAKE=1 &&
             source "/usr/share/bash-completion/completions/make"
@@ -138,13 +152,16 @@ function _mmake {
     for (( i=1; i <= COMP_CWORD; i++ )); do
         case "$arg" in
         esac
-        [ -n "$arg" ] && arg="" && continue
+        if [ -n "$arg" ]; then
+            arg=""
+            ((i < COMP_CWORD)) && continue || return
+        fi
         CUR="${COMP_WORDS[i]}"
         case "$CUR" in
         --* )
             if ((i < COMP_CWORD)); then
                 case "$CUR" in
-                -- ) ((OK_MAKE)) && _make; return ;; #FIXME make options not working
+                -- ) i+=1; break ;;
                 --period ) arg="p" ;;
                 esac
             else
@@ -155,10 +172,12 @@ function _mmake {
                 " -- "$CUR"))
             fi ;;
         -*[p] ) arg="${CUR: -1}" ;;
-        -* ) ((COMP_CWORD == 1)) && ((OK_MAKE)) && _make ;;
-        * ) ((OK_MAKE)) && _make; return ;;
+        -* ) ((COMP_CWORD == 1)) && ((OK_MAKE)) && _make && return ;;
+        * ) break ;;
         esac
+        ((i < COMP_CWORD)) || return
     done
+    ((OK_MAKE)) && _make #FIXME make options not working with --
 }
 
 
