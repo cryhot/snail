@@ -69,10 +69,10 @@ scale A 0 10
 mill -p 1 'python3 myscript.py $A'
 # Even better !
 
-mill -C 'track *.java' 'javac *.java'
+mill -F '*.java' 'javac *.java'
 # Compile everything !
 
-mill -C 'track *.java' 'snail; javac *.java'
+mill -F '*.java' 'snail; javac *.java'
 # ...with a little helper
 ```
 
