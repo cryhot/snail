@@ -31,12 +31,12 @@ function track {
         -w|--wildcard ) shift; glob=1 ;;
         -t|--timeout ) shift
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "invalid positive integer expression ‘$1’" >&2; return 1
+                echo "track : invalid positive integer expression ‘$1’" >&2; return 1
             }
             timeout="$1"; shift ;;
         -T|--delay ) shift
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "invalid positive integer expression ‘$1’" >&2; return 1
+                echo "track : invalid positive integer expression ‘$1’" >&2; return 1
             }
             delay="$1"; shift ;;
         -- ) shift; break ;;
@@ -57,7 +57,7 @@ function track {
     fi
     for file in "${files[@]}"; do
         modif[$file]=$(stat -c "%Z" "$file" 2>/dev/null) # || {
-        #     echo "cannot track ‘$file’" >&2 ; return 1
+        #     echo "track : cannot track ‘$file’" >&2 ; return 1
         # }
     done
     [ -n "$timeout" ] && ((timeout+=$(date +%s)))
@@ -108,14 +108,14 @@ function mill {
         case "$1" in
         -p|--period ) shift
             [[ "$1" =~ ^[+]?([0-9]*[.]?[0-9]+|[0-9]+[.])([eE][-+]?[0-9]+)?$ ]] || {
-                echo "invalid time interval ‘$1’" >&2; return 1
+                echo "mill : invalid time interval ‘$1’" >&2; return 1
             }
             __period__="$1"; shift ;;
         -i|--instant ) shift
             __period__=0 ;;
         -T|--timeout ) shift; __CONDS__=1
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "invalid positive integer expression ‘$1’" >&2; return 1
+                echo "mill : invalid positive integer expression ‘$1’" >&2; return 1
             }
             __timeout__="$1"; shift ;;
         -F|--track-file ) shift; __CONDS__=1
@@ -238,29 +238,32 @@ function mill {
 # scale VAR [MIN] [MAX]
 function scale {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "invalid identifier ‘$1’" >&2; return 1
+        echo "scale : invalid identifier ‘$1’" >&2; return 1
     }
     local __val__=(/dev/shm/scale-$$-$1-*)
-    [ ${#__val__[@]} -ge 4 ] && echo "too many open scales for ‘$1’" >&2 && return 3
+    [ ${#__val__[@]} -ge 4 ] && echo "scale : too many open scales for ‘$1’" >&2 && return 3
     local __val__=(/dev/shm/scale-$$-*)
-    [ ${#__val__[@]} -ge 16 ] && echo "too many open scales for this terminal" >&2 && return 3
+    [ ${#__val__[@]} -ge 16 ] && echo "scale : too many open scales for this terminal" >&2 && return 3
     local -r __shared__="/dev/shm/scale-$$-$1-$RANDOM$RANDOM"
     local __prev__=${!1}
     local __min__=${2-0}
     local __max__=${3-100}
     local __step__=1
     [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-        echo "invalid integer expression ‘$__min__" >&2; return 1
+        echo "scale : invalid integer expression ‘$__min__" >&2; return 1
     }
     [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-        echo "invalid integer expression ‘$__max__’" >&2; return 1
+        echo "scale : invalid integer expression ‘$__max__’" >&2; return 1
+    }
+    [ $# -le 3 ] || {
+        echo "scale : too many parameters" >&2; return 1
     }
     if [ "$__min__" -gt "$__max__" ]; then
         __val__="$__min__"
         __min__="$__max__"
         __max__="$__val__"
     fi
-    [ "$__min__" -eq "$__max__" ] && echo "bounds must be different values" >&2 && return 1
+    [ "$__min__" -eq "$__max__" ] && echo "scale : bounds must be different values" >&2 && return 1
     __val__=$__min__
     [ "$__prev__" -eq "$__prev__" ] 2>/dev/null && __val__=$__prev__
     [ "$__val__" -lt "$__min__" ] && __val__=$__min__
@@ -289,7 +292,7 @@ function scale {
             read -r "__val__"
         done < <(zenity --scale --print-partial "--text=$1=" "--title=Interactive variable modifier" \
             "--value=$__val__" "--min-value=$__min__" "--max-value=$__max__" "--step=$__step__" 2>/dev/null || \
-            ([[ $? != 1 ]] && echo "zenity cannot be launched") >&2)
+            ([[ $? != 1 ]] && echo "scale : zenity cannot be launched") >&2)
     }&)
 }
 
@@ -297,7 +300,7 @@ function scale {
 # ++ VAR [MIN] [MAX]
 function ++ {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "invalid identifier ‘$1’" >&2; return 1
+        echo "++ : invalid identifier ‘$1’" >&2; return 1
     }
     local __max__=""
     local __min__=""
@@ -306,10 +309,13 @@ function ++ {
         __max__=${2}
         __min__=${3-0}
         [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-            echo "invalid integer expression ‘$__max__’" >&2; return 1
+            echo "++ : invalid integer expression ‘$__max__’" >&2; return 1
         }
         [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-            echo "invalid integer expression ‘$__min__" >&2; return 1
+            echo "++ : invalid integer expression ‘$__min__’" >&2; return 1
+        }
+        [ $# -le 3 ] || {
+            echo "++ : too many parameters" >&2; return 1
         }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__="$__min__"
@@ -321,7 +327,7 @@ function ++ {
         __val__=${!1}
     fi
     [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
-        echo "\$$1 is NaN" >&2; return 2
+        echo "++ : \$$1 is NaN" >&2; return 2
     }
     ((__val__+=1))
     if [ -n "$__max__" ]; then
@@ -338,7 +344,7 @@ function ++ {
 # -- VAR [MIN] [MAX]
 function -- {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "invalid identifier ‘$1’" >&2; return 1
+        echo "-- : invalid identifier ‘$1’" >&2; return 1
     }
     local __max__=""
     local __min__=""
@@ -347,10 +353,13 @@ function -- {
         __max__=${2}
         __min__=${3-0}
         [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-            echo "invalid integer expression ‘$__max__’" >&2; return 1
+            echo "-- : invalid integer expression ‘$__max__’" >&2; return 1
         }
         [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-            echo "invalid integer expression ‘$__min__" >&2; return 1
+            echo "-- : invalid integer expression ‘$__min__’" >&2; return 1
+        }
+        [ $# -le 3 ] || {
+            echo "-- : too many parameters" >&2; return 1
         }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__=$__min__
@@ -362,7 +371,7 @@ function -- {
         __val__=${!1}
     fi
     [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
-        echo "\$$1 is NaN" >&2; return 2
+        echo "-- : \$$1 is NaN" >&2; return 2
     }
     ((__val__-=1))
     if [ -n "$__max__" ]; then
