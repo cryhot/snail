@@ -15,6 +15,14 @@ function track {
     local -i glob=0
     local -i delay=-1
     local timeout=""
+    if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
+        local __OPTS__
+        __OPTS__="$(getopt --name "track" \
+            --options "+oagwt:T:" \
+            --longoptions "or,and,glob,wildcard,timeout:,delay:" \
+            -- "$@")" || return 1
+        eval set -- "$__OPTS__"
+    fi
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
         -o|--or ) shift; and=0 ;;
@@ -88,6 +96,14 @@ function mill {
     local -a __conditions__=()
     local -a __tracked_files__=()
     local -i __CONDS__=0
+    if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
+        local __OPTS__
+        __OPTS__="$(getopt --name "mill" \
+            --options "+p:iT:F:C:qbB" \
+            --longoptions "period:,instant,timeout:,track-file:,condition:,quiet,unbuffered,buffered" \
+            -- "$@")" || return 1
+        eval set -- "$__OPTS__"
+    fi
     while [[ $# -ge 1 ]]; do # opts
         case "$1" in
         -p|--period ) shift
