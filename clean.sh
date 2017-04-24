@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # clean.sh PID
 [[ "$BASH_SOURCE" == "$0" ]] || {
     echo "must not be sourced" >&2 && return 2
@@ -16,7 +16,7 @@ while [[ $# -ge 1 ]]; do # opts
 done
 
 [ "$1" -ge "0" ] 2>/dev/null || {
-    echo "shell PID: invalid positive integer expression ‘$1’" >&2 && return 1
+    echo "shell PID: invalid positive integer expression ‘$1’" >&2 && exit 1
 }
 
 if ((__wait__)); then

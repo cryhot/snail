@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
 # snail [-a|[%]FRAME] [POSITION] [WIDTH]
