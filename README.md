@@ -4,12 +4,15 @@
 :snail: _Make your shell interactive_
 
 ## Installation
-Just download the source :)  
+Just download the source :)
+```sh
+git clone https://github.com/cryhot/snail.git $HOME/snail
+```
 The code of [`snail.sh`](snail.sh) must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
 
-If you want permanent changes, just add this line to your `.bashrc` (admitting you used the repertory `~/snail`) :
+If you want permanent changes, just add this line to your `.bashrc` (admitting you used the directory `~/snail`) :
 ```sh
-    . ~/snail/snail.sh
+. ~/snail/snail.sh
 ```
 **:warning: If you share your computer with other users, don't forget to remove write perms from the sourced file.**
 
