@@ -139,11 +139,12 @@ function _increment {
 
 # mmake completion
 function _mmake {
-    local OK_MAKE=0
+    local OK_MAKE=1
     # shellcheck disable=SC2034
     if [ -z "$(declare -pf _make 2>/dev/null)" ]; then
-        [ -e "/usr/share/bash-completion/completions/make" ] && OK_MAKE=1 &&
-            source "/usr/share/bash-completion/completions/make"
+        [ -e "/usr/share/bash-completion/completions/make" ] &&
+            source "/usr/share/bash-completion/completions/make" ||
+            OK_MAKE=0
     fi
 
     local -i i

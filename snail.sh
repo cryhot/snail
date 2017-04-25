@@ -396,7 +396,10 @@ function mmake {
         * ) break ;;
         esac
     done
-    mill -p "${__period__-0.2}" -- make "$@"
+    local -r TARGET="$( (($#)) && printf " %q" "$@" )"
+    mill -p "${__period__-0.2}" -C "make -q$TARGET 2>/dev/null; [ $? -eq 1 ]" -- "make$TARGET &&
+echo -en '\e[01;42m SUCCESS \e[m' ||
+echo -en '\e[01;41m FAILURE \e[m' "
 }
 
 
