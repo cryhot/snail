@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
+if [ -n "${SNAIL_PATH+_}" ]; then
+    [ "$SNAIL_PATH" != "$(dirname "$BASH_SOURCE")" ] && {
+        echo "SNAIL_PATH already defined" >&2
+        [[ "$BASH_SOURCE" == "$0" ]] && return 1 || exit 1
+    }
+else
+    declare -r SNAIL_PATH="$(dirname "$BASH_SOURCE")"
+fi
+
 [[ "$BASH_SOURCE" == "$0" ]] || {
-    nohup "$(dirname "$BASH_SOURCE")/clean.sh" --wait $$ >/dev/null 2>&1 &
+    nohup "$SNAIL_PATH/clean.sh" --wait $$ >/dev/null 2>&1 &
 }
 
 export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
@@ -396,7 +405,7 @@ function how {
     case $__STATUS__ in
         0 ) echo -e "\e[01;42m SUCCESS \e[m" ;;
         1 ) echo -e "\e[01;41m FAILURE \e[m" ;;
-        * ) echo -e "\e[01;41m FAILURE \e[m \e[30m($__STATUS__)\e[m" ;;
+        * ) echo -e "\e[01;41m FAILURE \e[m \e[01;30m($__STATUS__)\e[m" ;;
     esac
     return $__STATUS__
 }
@@ -414,13 +423,17 @@ function mmake {
         esac
     done
     local -r TARGET="$( (($#)) && printf " %q" "$@" )"
-    mill -p "${__period__-0.2}" -C "make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" -- "make$TARGET; how"
+    mill -p "${__period__-0.2}" \
+        -F "[Mm]akefile" \
+        -C "track -- [Mm]akefile \$($SNAIL_PATH/util/make_dependancies.sh); make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" \
+        -- "make$TARGET; how"
+    # track -- Makefile $SNAIL_PATH/util/make_dependancies.sh
 }
 
 
-. "$(dirname "$BASH_SOURCE")/boris.sh"
+. "$SNAIL_PATH/boris.sh"
 
-. "$(dirname "$BASH_SOURCE")/completion.sh"
+. "$SNAIL_PATH/completion.sh"
 
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clear" EXIT
