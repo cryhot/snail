@@ -137,6 +137,18 @@ function _increment {
     ((COMP_CWORD == 1)) && _intvar
 }
 
+
+# how completion
+function _how {
+    # shellcheck disable=SC2034
+    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+        [ -e "/usr/share/bash-completion/bash_completion" ] &&
+            source "/usr/share/bash-completion/bash_completion"
+    fi
+    _command
+}
+
+
 # mmake completion
 function _mmake {
     local OK_MAKE=1
@@ -187,4 +199,5 @@ complete -F _mill mill
 complete -F _scale scale
 complete -F _increment -- ++
 complete -F _increment -- --
+complete -F _how how
 complete -F _mmake mmake

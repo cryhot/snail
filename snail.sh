@@ -223,7 +223,7 @@ function mill {
             # test `-C`
             ((__change__)) && break
             for __condition__ in "${__conditions__[@]}"; do
-                eval "$__condition__" && __change__=1 && break
+                eval -- "$__condition__" && __change__=1 && break
             done
             ((__change__)) && break
             # wait `PERIOD`
@@ -385,6 +385,23 @@ function -- {
 }
 
 
+# how [COMMAND...]
+function how {
+    local -i __STATUS__=$?
+    if (($#)); then
+        [ "$1" = -- ] && shift
+        eval -- "$@"
+        __STATUS__=$?
+    fi
+    case $__STATUS__ in
+        0 ) echo -e "\e[01;42m SUCCESS \e[m" ;;
+        1 ) echo -e "\e[01;41m FAILURE \e[m" ;;
+        * ) echo -e "\e[01;41m FAILURE \e[m \e[30m($__STATUS__)\e[m" ;;
+    esac
+    return $__STATUS__
+}
+
+
 # mmake [-p PERIOD] [OPTION]... [TARGET]...
 function mmake {
     local __period__
@@ -397,9 +414,7 @@ function mmake {
         esac
     done
     local -r TARGET="$( (($#)) && printf " %q" "$@" )"
-    mill -p "${__period__-0.2}" -C "make -q$TARGET 2>/dev/null; [ $? -eq 1 ]" -- "make$TARGET &&
-echo -en '\e[01;42m SUCCESS \e[m' ||
-echo -en '\e[01;41m FAILURE \e[m' "
+    mill -p "${__period__-0.2}" -C "make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" -- "make$TARGET; how"
 }
 
 
