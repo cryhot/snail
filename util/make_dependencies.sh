@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
-# make_dependancies.sh [TARGET]...
+# make_dependencies.sh [TARGET]...
 [[ "$BASH_SOURCE" == "$0" ]] || {
     echo "must not be sourced" >&2 && return 2
 }
 
 # get the makefile database
-MDB="$(make -qp)"
+MDB="$(make -qp 2>/dev/null)"
+ERR=$?
+((ERR)) && exit $ERR
 declare -A DEP EXPLORE
 
 # get initial targets
-if (($#)); then
-    for TARGET in "$@"; do
-        EXPLORE["$TARGET"]=1
-    done
-else
+for TARGET in "$@"; do
+    [[ "$TARGET" =~ ^-.*$ ]] && continue
+    EXPLORE["$TARGET"]=1
+done
+if [ ${#EXPLORE[@]} -eq 0 ]; then
     for TARGET in $(sed -n "/^.DEFAULT_GOAL[ :]*=/ p;" <<< "$MDB" | sed -e "s/^.DEFAULT_GOAL[ :]*=//g"); do
         EXPLORE["$TARGET"]=1
     done

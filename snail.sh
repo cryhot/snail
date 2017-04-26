@@ -7,7 +7,8 @@ if [ -n "${SNAIL_PATH+_}" ]; then
         [[ "$BASH_SOURCE" == "$0" ]] && return 1 || exit 1
     }
 else
-    declare -r SNAIL_PATH="$(dirname "$BASH_SOURCE")"
+    SNAIL_PATH="$(dirname "$BASH_SOURCE")"
+    declare -r SNAIL_PATH
 fi
 
 [[ "$BASH_SOURCE" == "$0" ]] || {
@@ -425,7 +426,7 @@ function mmake {
     local -r TARGET="$( (($#)) && printf " %q" "$@" )"
     mill -p "${__period__-0.2}" \
         -F "[Mm]akefile" \
-        -C "track -- [Mm]akefile \$($SNAIL_PATH/util/make_dependancies.sh); make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" \
+        -C "track -- [Mm]akefile \$($SNAIL_PATH/util/make_dependencies.sh$TARGET); make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" \
         -- "make$TARGET; how"
     # track -- Makefile $SNAIL_PATH/util/make_dependancies.sh
 }
