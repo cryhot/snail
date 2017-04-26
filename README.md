@@ -42,6 +42,9 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 - **`track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...`**  
   pause the script until the file is modified ([see more][man track])  
 
+- **`how [COMMAND]...`**  
+  show a command exit status ([see more][man how]) 
+
 - **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
   basically `mill make` ([see more][man mmake])  
 
@@ -89,5 +92,6 @@ _French people love snails_
 [man ++]:    https://github.com/cryhot/snail/wiki/man-++    "man ++"
 [man --]:    https://github.com/cryhot/snail/wiki/man-‐‐    "man --"
 [man track]: https://github.com/cryhot/snail/wiki/man-track "man track"
+[man how]:   https://github.com/cryhot/snail/wiki/man-how   "man how"
 [man mmake]: https://github.com/cryhot/snail/wiki/man-mmake "man mmake"
 [man snail]: https://github.com/cryhot/snail/wiki/man-snail "man snail"
