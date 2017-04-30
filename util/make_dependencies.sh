@@ -7,7 +7,7 @@
 # get the makefile database
 MDB="$(make -qp 2>/dev/null)"
 ERR=$?
-((ERR)) && exit $ERR
+((ERR!=1)) && ((ERR!=1)) && exit $ERR
 declare -A DEP EXPLORE
 
 # get initial targets
