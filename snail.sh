@@ -412,23 +412,13 @@ function how {
 }
 
 
-# mmake [-p PERIOD] [OPTION]... [TARGET]...
+# mmake [OPTION]... [TARGET]...
 function mmake {
-    local __period__
-    while [[ $# -ge 1 ]]; do # opts
-        case "$1" in
-        -p|--period ) shift;
-            __period__="$1"; shift ;;
-        -- ) shift; break ;;
-        * ) break ;;
-        esac
-    done
     local -r TARGET="$( (($#)) && printf " %q" "$@" )"
-    mill -p "${__period__-0.2}" \
+    mill -i \
         -F "[Mm]akefile" \
         -C "track -- [Mm]akefile \$($SNAIL_PATH/util/make_dependencies.sh$TARGET); make -q$TARGET 2>/dev/null; [ \$? -eq 1 ]" \
         -- "make$TARGET; how"
-    # track -- Makefile $SNAIL_PATH/util/make_dependancies.sh
 }
 
 

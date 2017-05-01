@@ -158,39 +158,8 @@ function _mmake {
             source "/usr/share/bash-completion/completions/make" ||
             OK_MAKE=0
     fi
-
-    local -i i
-    local arg=""
-    local CUR
-    for (( i=1; i <= COMP_CWORD; i++ )); do
-        case "$arg" in
-        esac
-        if [ -n "$arg" ]; then
-            arg=""
-            ((i < COMP_CWORD)) && continue || return
-        fi
-        CUR="${COMP_WORDS[i]}"
-        case "$CUR" in
-        --* )
-            if ((i < COMP_CWORD)); then
-                case "$CUR" in
-                -- ) i+=1; break ;;
-                --period ) arg="p" ;;
-                esac
-            else
-                COMPREPLY=()
-                ((OK_MAKE)) && _make #FIXME does nothing
-                COMPREPLY+=($(compgen -W "
-                    --period
-                " -- "$CUR"))
-            fi ;;
-        -*[p] ) arg="${CUR: -1}" ;;
-        -* ) ((COMP_CWORD == 1)) && ((OK_MAKE)) && _make && return ;;
-        * ) break ;;
-        esac
-        ((i < COMP_CWORD)) || return
-    done
-    ((OK_MAKE)) && _make #FIXME make options not working with --
+    COMP_WORDS[0]="make"
+    ((OK_MAKE)) && _make make "$2" "$3"
 }
 
 

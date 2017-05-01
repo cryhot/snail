@@ -43,9 +43,9 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
   pause the script until the file is modified ([see more][man track])  
 
 - **`how [COMMAND]...`**  
-  show a command exit status ([see more][man how]) 
+  show a command exit status ([see more][man how])  
 
-- **`mmake [-p PERIOD] [OPTION]... [TARGET]...`**  
+- **`mmake [OPTION]... [TARGET]...`**  
   basically `mill make` ([see more][man mmake])  
 
 ### Examples
