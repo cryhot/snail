@@ -26,10 +26,19 @@ function _intvar_abstract {
 }
 
 
+# arbitrary integer value
+function _numval {
+    COMPREPLY+=("${COMP_WORDS[COMP_CWORD]}"{0..9})
+    # TODO: -f: accept float
+    # TODO: -n: accept negative numbers
+    # TODO: do not complete when incorrect
+}
+
+
 # track completion
 function _track {
     # shellcheck disable=SC2034
-    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
@@ -38,13 +47,14 @@ function _track {
     local arg=""
     local CUR
     for (( i=1; i <= COMP_CWORD; i++ )); do
+        CUR="${COMP_WORDS[i]}"
         case "$arg" in
+        t|T ) ((i == COMP_CWORD)) && _numval ;;
         esac
         if [ -n "$arg" ]; then
             arg=""
             ((i < COMP_CWORD)) && continue || return
         fi
-        CUR="${COMP_WORDS[i]}"
         case "$CUR" in
         --* )
             if ((i < COMP_CWORD)); then
@@ -76,7 +86,7 @@ function _track {
 # mill completion
 function _mill {
     # shellcheck disable=SC2034
-    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
@@ -85,7 +95,10 @@ function _mill {
     local arg=""
     local CUR
     for (( i=1; i <= COMP_CWORD; i++ )); do
+        CUR="${COMP_WORDS[i]}"
         case "$arg" in
+        p ) ((i == COMP_CWORD)) && _numval -f ;;
+        T ) ((i == COMP_CWORD)) && _numval ;;
         F ) ((i == COMP_CWORD)) && _minimal ;;
         C ) ((i == COMP_CWORD)) && _command_offset $i ;;
         esac
@@ -93,7 +106,6 @@ function _mill {
             arg=""
             ((i < COMP_CWORD)) && continue || return
         fi
-        CUR="${COMP_WORDS[i]}"
         case "$CUR" in
         --* )
             if ((i < COMP_CWORD)); then
@@ -129,23 +141,64 @@ function _mill {
 # scale completion
 function _scale {
     ((COMP_CWORD == 1)) && _intvar_abstract
+    ((COMP_CWORD == 2)) && _numval -n
+    ((COMP_CWORD == 3)) && _numval -n
 }
 
 
 # ++ and -- completion
 function _increment {
     ((COMP_CWORD == 1)) && _intvar
+    ((COMP_CWORD == 2)) && _numval -n
+    ((COMP_CWORD == 3)) && _numval -n
 }
 
 
 # how completion
 function _how {
     # shellcheck disable=SC2034
-    if [ -z "$(declare -pf _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
-    _command
+
+    local -i i
+    local arg=""
+    local CUR
+    local -i __eval__=1
+    for (( i=1; i <= COMP_CWORD; i++ )); do
+        CUR="${COMP_WORDS[i]}"
+        case "$arg" in
+        p ) ((i == COMP_CWORD)) && {
+                [ "$2" != "@" ] && _numval -n
+                COMPREPLY+=("$(compgen -W "@" -- "$CUR")")
+            }
+            __eval__=0;;
+        esac
+        if [ -n "$arg" ]; then
+            arg=""
+            ((i < COMP_CWORD)) && continue || return
+        fi
+        case "$CUR" in
+        --* )
+            if ((i < COMP_CWORD)); then
+                case "$CUR" in
+                -- ) i+=1; break ;;
+                --pipe-status )     arg="p" ;;
+                esac
+            else
+                COMPREPLY=($(compgen -W "
+                    --pipe-status
+                    --pipe-status-all
+                " -- "$CUR"))
+            fi ;;
+        -*[p] ) arg="${CUR: -1}" ;;
+        -* ) ;;
+        * ) break ;;
+        esac
+        ((i < COMP_CWORD)) || return
+    done
+    ((__eval__)) && _command_offset $i
 }
 
 
@@ -153,7 +206,7 @@ function _how {
 function _mmake {
     local OK_MAKE=1
     # shellcheck disable=SC2034
-    if [ -z "$(declare -pf _make 2>/dev/null)" ]; then
+    if [ -z "$(declare -F _make 2>/dev/null)" ]; then
         [ -e "/usr/share/bash-completion/completions/make" ] &&
             source "/usr/share/bash-completion/completions/make" ||
             OK_MAKE=0

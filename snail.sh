@@ -266,7 +266,7 @@ function scale {
         echo "scale : invalid integer expression ‘$__max__’" >&2; return 1
     }
     [ $# -le 3 ] || {
-        echo "scale : too many parameters" >&2; return 1
+        echo "scale : too many arguments" >&2; return 1
     }
     if [ "$__min__" -gt "$__max__" ]; then
         __val__="$__min__"
@@ -325,7 +325,7 @@ function ++ {
             echo "++ : invalid integer expression ‘$__min__’" >&2; return 1
         }
         [ $# -le 3 ] || {
-            echo "++ : too many parameters" >&2; return 1
+            echo "++ : too many arguments" >&2; return 1
         }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__="$__min__"
@@ -369,7 +369,7 @@ function -- {
             echo "-- : invalid integer expression ‘$__min__’" >&2; return 1
         }
         [ $# -le 3 ] || {
-            echo "-- : too many parameters" >&2; return 1
+            echo "-- : too many arguments" >&2; return 1
         }
         if [ "$__min__" -gt "$__max__" ]; then
             __val__=$__min__
@@ -395,20 +395,75 @@ function -- {
 }
 
 
-# how [COMMAND...]
+# how [-p INDEX|-P|[COMMAND]...]
 function how {
-    local -i __STATUS__=$?
-    if (($#)); then
-        [ "$1" = -- ] && shift
-        eval -- "$@"
-        __STATUS__=$?
+    local __STATUS__="$?" __PIPESTATUS__=("${PIPESTATUS[@]}")
+    local -i __STATUS__; local -a __PIPESTATUS__
+    local -i __EVAL__=0
+    local __PIPEINDEX__=
+    (($#)) && [ "${@: -1}" = "--" ] && __EVAL__=1
+    if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
+        local __OPTS__
+        __OPTS__="$(getopt --name "how" \
+            --options "+p:P" \
+            --longoptions "pipe-status:,pipe-status-all" \
+            -- "$@")" || return 1
+        eval set -- "$__OPTS__"
     fi
-    case $__STATUS__ in
-        0 ) echo -e "\e[01;42m SUCCESS \e[m" ;;
-        1 ) echo -e "\e[01;41m FAILURE \e[m" ;;
-        * ) echo -e "\e[01;41m FAILURE \e[m \e[01;30m($__STATUS__)\e[m" ;;
-    esac
-    return $__STATUS__
+    while [[ $# -ge 1 ]]; do # opts
+        case "$1" in
+        -p|--pipe-status ) shift
+            [ "$1" != "@" ] && ! [ "$1" -eq "$1" ] 2>/dev/null && {
+                echo "how : invalid integer expression ‘$1’" >&2; return 1
+            }
+            __PIPEINDEX__="$1"; shift ;;
+        -P|--pipe-status-all ) shift
+            __PIPEINDEX__="@" ;;
+        -- ) shift; break ;;
+        * ) break ;;
+        esac
+    done
+    if [ -n "$__PIPEINDEX__" ]; then
+        __EVAL__=0
+        (($#)) && {
+            echo "how : too many arguments (mode pipe-status)" >&2; return 1
+        }
+    else
+        (($#)) && __EVAL__=1
+    fi
+    if ((__EVAL__)); then
+        (exit $__STATUS__)
+        eval -- "$@"
+        __STATUS__=$? __PIPESTATUS__=("${PIPESTATUS[@]}")
+    fi
+
+    if [ "$__PIPEINDEX__" = "@" ]; then
+        __PIPESTATUS__=("${__PIPESTATUS__[@]}")
+    elif [ -n "$__PIPEINDEX__" ]; then
+        __PIPESTATUS__=("${__PIPESTATUS__[@]: $__PIPEINDEX__:1}")
+    else
+        __PIPESTATUS__=("$__STATUS__")
+    fi
+    local -i __S__
+    __STATUS__=0
+    for __S__ in "${__PIPESTATUS__[@]}"; do
+        ((__S__)) && __STATUS__=$__S__ && break
+    done
+    {
+        case $__STATUS__ in
+            0 ) echo -en "\e[01;42m SUCCESS \e[m" ;;
+            * ) echo -en "\e[01;41m FAILURE \e[m"
+                if ((${#__PIPESTATUS__[@]}>1)) || ((__STATUS__!=1)); then
+                    echo -en " \e[01;30m(${__PIPESTATUS__[0]}"
+                    for __S__ in "${__PIPESTATUS__[@]:1}"; do
+                        echo -en "|$__S__"
+                    done
+                    echo -en ")\e[m"
+                fi ;;
+        esac
+        echo
+    }
+    return "$__STATUS__"
 }
 
 

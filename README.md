@@ -42,7 +42,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 - **`track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...`**  
   pause the script until the file is modified ([see more][man track])  
 
-- **`how [COMMAND]...`**  
+- **`how [-p INDEX|-P|[COMMAND]...]`**  
   show a command exit status ([see more][man how])  
 
 - **`mmake [OPTION]... [TARGET]...`**  
