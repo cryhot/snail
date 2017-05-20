@@ -27,7 +27,7 @@ function track {
     local timeout=""
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
-        __OPTS__="$(getopt --name "track" \
+        __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+oagwt:T:" \
             --longoptions "or,and,glob,wildcard,timeout:,delay:" \
             -- "$@")" || return 1
@@ -41,12 +41,12 @@ function track {
         -w|--wildcard ) shift; glob=1 ;;
         -t|--timeout ) shift
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "track : invalid positive integer expression ‘$1’"; return 1
+                echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             timeout="$1"; shift ;;
         -T|--delay ) shift
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "track : invalid positive integer expression ‘$1’"; return 1
+                echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             delay="$1"; shift ;;
         -- ) shift; break ;;
@@ -67,7 +67,7 @@ function track {
     fi
     for file in "${files[@]}"; do
         modif[$file]=$(stat -c "%Z" "$file" 2>/dev/null) # || {
-        #     echo "track : cannot track ‘$file’"; return 1
+        #     echo "${FUNCNAME[0]} : cannot track ‘$file’"; return 1
         # } >&2
     done
     [ -n "$timeout" ] && ((timeout+=$(date +%s)))
@@ -109,7 +109,7 @@ function mill {
     local -i __CONDS__=0
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
-        __OPTS__="$(getopt --name "mill" \
+        __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+p:iT:F:C:qbB" \
             --longoptions "period:,instant,timeout:,track-file:,condition:,quiet,unbuffered,buffered" \
             -- "$@")" || return 1
@@ -119,14 +119,14 @@ function mill {
         case "$1" in
         -p|--period ) shift
             [[ "$1" =~ ^[+]?([0-9]*[.]?[0-9]+|[0-9]+[.])([eE][-+]?[0-9]+)?$ ]] || {
-                echo "mill : invalid time interval ‘$1’"; return 1
+                echo "${FUNCNAME[0]} : invalid time interval ‘$1’"; return 1
             } >&2
             __period__="$1"; shift ;;
         -i|--instant ) shift
             __period__=0 ;;
         -T|--timeout ) shift; __CONDS__=1
             [ "$1" -ge "0" ] 2>/dev/null || {
-                echo "mill : invalid positive integer expression ‘$1’"; return 1
+                echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             __timeout__="$1"; shift ;;
         -F|--track-file ) shift; __CONDS__=1
@@ -161,7 +161,7 @@ function mill {
     # }&) >/dev/null 2>&1
     local __ps1__ __ps2__ __first_line__ __line__ __time_out__
     local __file__ __condition__ # iterators
-    local -i __change__
+    local -i __BREAK__
     local -a __files__ __files2__
     local -A __file_modif__
     # CYCLE
@@ -180,8 +180,10 @@ function mill {
         unset __first_line__
         case $__mode__ in
         0 ) # QUIET
-            (exit "$__STATUS__")
-            eval -- "$@"; __STATUS__="$?"
+            for __BREAK__ in 1 0; do
+                ((__BREAK__)) || break
+                (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
+            done
             ;;
         1 ) # UNBUFFERED
             clear
@@ -193,8 +195,10 @@ function mill {
                 [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                 echo "$__line__"
             done <<< "$@"
-            (exit "$__STATUS__")
-            eval -- "$@"; __STATUS__="$?"
+            for __BREAK__ in 1 0; do
+                ((__BREAK__)) || break
+                (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
+            done
             ;;
         2 ) # BUFFERED
             {
@@ -206,41 +210,40 @@ function mill {
                     [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                     echo "$__line__"
                 done <<< "$@"
-                (exit "$__STATUS__")
-                eval -- "$@"; __STATUS__="$?" # TODO: try a PTY
-            } &> "$__buffer__"
+                for __BREAK__ in 1 0; do
+                    ((__BREAK__)) || break
+                    (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
+                done
+            } &> "$__buffer__" # TODO: try a PTY
             clear
             cat "$__buffer__"
             rm "$__buffer__" # does not works if interrupted
             ;;
         esac
+        ((__BREAK__)) && break;
         # LATENCY STAGE
         while true; do
             # test `-T`
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
             # test `-F`
-            __change__=0
             for __file__ in "${!__file_modif__[@]}"; do
-                [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null || {
-                    __change__=1 && break
-                }
+                [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null ||
+                    break 2
             done
-            ((__change__)) && break
             eval "$(shopt -s nullglob; __files2__=(${__tracked_files__[@]}); \
                 declare -p __files2__)" || __files2__=()
             [ ${#__files2__[@]} -eq ${#__files__[@]} ] || break
             for __file__ in "${!__files__[@]}"; do
-                [ "${__files2__[$__file__]}" = "${__files__[$__file__]}" ] || {
-                    __change__=1 && break
-                }
+                [ "${__files2__[$__file__]}" = "${__files__[$__file__]}" ] || break 2
             done
             # test `-C`
-            ((__change__)) && break
             for __condition__ in "${__conditions__[@]}"; do
-                (exit "$__STATUS__")
-                eval -- "$__condition__" && __change__=1 && break
+                for __BREAK__ in 1 0; do
+                    ((__BREAK__)) || break
+                    (exit "$__STATUS__"); eval -- "$__condition__" && break 3
+                done
+                ((__BREAK__)) && break 2
             done
-            ((__change__)) && break
             # wait `PERIOD`
             sleep "$__period__"
             ((__CONDS__)) || break
@@ -253,15 +256,15 @@ function mill {
 # scale VAR [MIN] [MAX]
 function scale {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "scale : invalid identifier ‘$1’"; return 1
+        echo "${FUNCNAME[0]} : invalid identifier ‘$1’"; return 1
     } >&2
     local __val__=(/dev/shm/scale-$$-$1-*)
     [ ${#__val__[@]} -ge 4 ] && {
-        echo "scale : too many open scales for ‘$1’"; return 3
+        echo "${FUNCNAME[0]} : too many open scales for ‘$1’"; return 3
     } >&2
     local __val__=(/dev/shm/scale-$$-*)
     [ ${#__val__[@]} -ge 16 ] && {
-        echo "scale : too many open scales for this terminal"; return 3
+        echo "${FUNCNAME[0]} : too many open scales for this terminal"; return 3
     } >&2
     local -r __shared__="/dev/shm/scale-$$-$1-$RANDOM$RANDOM"
     local __prev__=${!1}
@@ -269,13 +272,13 @@ function scale {
     local __max__=${3-100}
     local __step__=1
     [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-        echo "scale : invalid integer expression ‘$__min__"; return 1
+        echo "${FUNCNAME[0]} : invalid integer expression ‘$__min__"; return 1
     } >&2
     [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-        echo "scale : invalid integer expression ‘$__max__’"; return 1
+        echo "${FUNCNAME[0]} : invalid integer expression ‘$__max__’"; return 1
     } >&2
     [ $# -le 3 ] || {
-        echo "scale : too many arguments"; return 1
+        echo "${FUNCNAME[0]} : too many arguments"; return 1
     } >&2
     if [ "$__min__" -gt "$__max__" ]; then
         __val__="$__min__"
@@ -283,7 +286,7 @@ function scale {
         __max__="$__val__"
     fi
     [ "$__min__" -eq "$__max__" ] && {
-        echo "scale : bounds must be different values"; return 1
+        echo "${FUNCNAME[0]} : bounds must be different values"; return 1
     } >&2
     __val__=$__min__
     [ "$__prev__" -eq "$__prev__" ] 2>/dev/null && __val__=$__prev__
@@ -311,9 +314,12 @@ function scale {
             kill -s 0 $$ || exit # TODO: close zenity
             echo "$__val__" > "$__shared__"
             read -r "__val__"
-        done < <(zenity --scale --print-partial "--text=$1=" "--title=Interactive variable modifier" \
-            "--value=$__val__" "--min-value=$__min__" "--max-value=$__max__" "--step=$__step__" 2>/dev/null || \
-            ([[ $? != 1 ]] && echo "scale : zenity cannot be launched") >&2)
+        done < <(
+            zenity --scale --print-partial --text="$1=" --title="Interactive variable modifier" \
+            --value="$__val__" --min-value="$__min__" --max-value="$__max__" --step="$__step__" 2>/dev/null || {
+                echo "${FUNCNAME[0]} : zenity cannot be launched"
+            } >&2
+        )
     }&)
 }
 
@@ -321,7 +327,7 @@ function scale {
 # ++ VAR [MIN] [MAX]
 function ++ {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "++ : invalid identifier ‘$1’"; return 1
+        echo "${FUNCNAME[0]} : invalid identifier ‘$1’"; return 1
     } >&2
     local __max__=""
     local __min__=""
@@ -330,13 +336,13 @@ function ++ {
         __max__=${2}
         __min__=${3-0}
         [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-            echo "++ : invalid integer expression ‘$__max__’"; return 1
+            echo "${FUNCNAME[0]} : invalid integer expression ‘$__max__’"; return 1
         } >&2
         [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-            echo "++ : invalid integer expression ‘$__min__’"; return 1
+            echo "${FUNCNAME[0]} : invalid integer expression ‘$__min__’"; return 1
         } >&2
         [ $# -le 3 ] || {
-            echo "++ : too many arguments"; return 1
+            echo "${FUNCNAME[0]} : too many arguments"; return 1
         } >&2
         if [ "$__min__" -gt "$__max__" ]; then
             __val__="$__min__"
@@ -348,7 +354,7 @@ function ++ {
         __val__=${!1}
     fi
     [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
-        echo "++ : \$$1 is NaN"; return 2
+        echo "${FUNCNAME[0]} : \$$1 is NaN"; return 2
     } >&2
     ((__val__+=1))
     if [ -n "$__max__" ]; then
@@ -365,7 +371,7 @@ function ++ {
 # -- VAR [MIN] [MAX]
 function -- {
     echo dummy | read -r "$1" 2>/dev/null || {
-        echo "-- : invalid identifier ‘$1’"; return 1
+        echo "${FUNCNAME[0]} : invalid identifier ‘$1’"; return 1
     } >&2
     local __max__=""
     local __min__=""
@@ -374,13 +380,13 @@ function -- {
         __max__=${2}
         __min__=${3-0}
         [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
-            echo "-- : invalid integer expression ‘$__max__’"; return 1
+            echo "${FUNCNAME[0]} : invalid integer expression ‘$__max__’"; return 1
         } >&2
         [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-            echo "-- : invalid integer expression ‘$__min__’"; return 1
+            echo "${FUNCNAME[0]} : invalid integer expression ‘$__min__’"; return 1
         } >&2
         [ $# -le 3 ] || {
-            echo "-- : too many arguments"; return 1
+            echo "${FUNCNAME[0]} : too many arguments"; return 1
         } >&2
         if [ "$__min__" -gt "$__max__" ]; then
             __val__=$__min__
@@ -392,7 +398,7 @@ function -- {
         __val__=${!1}
     fi
     [ "$__val__" -eq "$__val__" ] 2>/dev/null || {
-        echo "-- : \$$1 is NaN"; return 2
+        echo "${FUNCNAME[0]} : \$$1 is NaN"; return 2
     } >&2
     ((__val__-=1))
     if [ -n "$__max__" ]; then
@@ -415,7 +421,7 @@ function how {
     (($#)) && [ "${@: -1}" = "--" ] && __EVAL__=1
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
-        __OPTS__="$(getopt --name "how" \
+        __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+p:P" \
             --longoptions "pipe-status:,pipe-status-all" \
             -- "$@")" || return 1
@@ -425,7 +431,7 @@ function how {
         case "$1" in
         -p|--pipe-status ) shift
             [ "$1" != "@" ] && ! [ "$1" -eq "$1" ] 2>/dev/null && {
-                echo "how : invalid integer expression ‘$1’"; return 1
+                echo "${FUNCNAME[0]} : invalid integer expression ‘$1’"; return 1
             } >&2
             __PIPEINDEX__="$1"; shift ;;
         -P|--pipe-status-all ) shift
@@ -444,7 +450,7 @@ function how {
         eval -- "$@"
         __STATUS__=$? __PIPESTATUS__=("${PIPESTATUS[@]}")
     elif (($#)); then
-        echo "how : too many arguments (mode pipe-status)" >&2;
+        echo "${FUNCNAME[0]} : too many arguments (mode pipe-status)" >&2;
         return 1
     fi
 

@@ -76,10 +76,26 @@ mill -p 1 'python3 myscript.py $A'
 # Even better !
 
 mill -F '*.java' 'javac *.java'
-# Compile everything !
+# Compile everything on time !
 
 mill -F '*.java' 'snail; javac *.java'
 # ...with a little helper
+
+mill -F '*.java' 'javac *.java |& head -16; how -p0'
+# more practical case
+
+mill -b -T 300 '
+echo "SERVER STARTED - $(date)" | tee -a server.log
+./my_server |& tee -a server.log
+echo "SERVER CRASHED - $(date)" | tee -a server.log
+'
+# keep the server running, even in case of crash
+# (but with a cooldown of 5 minutes between two restarts)
+# sometime, we want the command not to use a buffer...
+# (and yes, the command is multiline)
+
+mmake
+# a lightweight syntax for a powerfull tool
 ```
 
 -----
