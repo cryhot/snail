@@ -5,7 +5,7 @@
 }
 
 # get the makefile database
-MDB="$(make -qp 2>/dev/null)"
+MDB="$(make -qp $@ 2>/dev/null)"
 declare -A DEP EXPLORE
 
 # get initial targets
