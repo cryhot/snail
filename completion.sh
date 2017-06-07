@@ -37,8 +37,8 @@ function _numval {
 
 # track completion
 function _track {
-    # shellcheck disable=SC2034
     if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+        # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
@@ -85,8 +85,8 @@ function _track {
 
 # mill completion
 function _mill {
-    # shellcheck disable=SC2034
     if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+        # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
@@ -156,8 +156,8 @@ function _increment {
 
 # how completion
 function _how {
-    # shellcheck disable=SC2034
     if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+        # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
     fi
@@ -204,12 +204,14 @@ function _how {
 
 # mmake completion
 function _mmake {
-    local OK_MAKE=1
-    # shellcheck disable=SC2034
+    local OK_MAKE=0
     if [ -z "$(declare -F _make 2>/dev/null)" ]; then
+        # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/completions/make" ] &&
-            source "/usr/share/bash-completion/completions/make" ||
-            OK_MAKE=0
+            source "/usr/share/bash-completion/completions/make" &&
+            OK_MAKE=1
+    else
+        OK_MAKE=1
     fi
     COMP_WORDS[0]="make"
     ((OK_MAKE)) && _make make "$2" "$3"

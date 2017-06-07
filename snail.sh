@@ -2,16 +2,15 @@
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
 if [ -n "${SNAIL_PATH+_}" ]; then
-    [ "$SNAIL_PATH" != "$(dirname "$BASH_SOURCE")" ] && {
+    [ "$SNAIL_PATH" != "$(dirname "${BASH_SOURCE[0]}")" ] && {
         echo "SNAIL_PATH already defined"
-        [[ "$BASH_SOURCE" == "$0" ]] && return 1 || exit 1
+        [[ "${BASH_SOURCE[0]}" == "$0" ]] && return 1 || exit 1
     } >&2
 else
-    SNAIL_PATH="$(dirname "$BASH_SOURCE")"
+    SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
     declare -r SNAIL_PATH
 fi
-
-[[ "$BASH_SOURCE" == "$0" ]] || {
+[[ "${BASH_SOURCE[0]}" == "$0" ]] || {
     nohup "$SNAIL_PATH/clean.sh" --wait $$ >/dev/null 2>&1 &
 }
 
@@ -258,15 +257,16 @@ function scale {
     echo dummy | read -r "$1" 2>/dev/null || {
         echo "${FUNCNAME[0]} : invalid identifier ‘$1’"; return 1
     } >&2
-    local __val__=(/dev/shm/scale-$$-$1-*)
+    local -a __val__=(/dev/shm/scale-$$-$1-*)
     [ ${#__val__[@]} -ge 4 ] && {
         echo "${FUNCNAME[0]} : too many open scales for ‘$1’"; return 3
     } >&2
-    local __val__=(/dev/shm/scale-$$-*)
+    local -a __val__=(/dev/shm/scale-$$-*)
     [ ${#__val__[@]} -ge 16 ] && {
         echo "${FUNCNAME[0]} : too many open scales for this terminal"; return 3
     } >&2
     local -r __shared__="/dev/shm/scale-$$-$1-$RANDOM$RANDOM"
+    local -i __val__
     local __prev__=${!1}
     local __min__=${2-0}
     local __max__=${3-100}
@@ -494,13 +494,15 @@ function mmake {
 }
 
 
+# shellcheck source=./boris.sh
 . "$SNAIL_PATH/boris.sh"
 
+# shellcheck source=./completion.sh
 . "$SNAIL_PATH/completion.sh"
 
-if [[ "$BASH_SOURCE" == "$0" ]]; then
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     trap "clear" EXIT
-    cd "$(dirname "$0")"
+    cd "$(dirname "$0")" || exit
     # shellcheck disable=SC2016
     mill -q -p 0.1 '
         ++ FRAME 1 || ++ X -19 $(tput cols)

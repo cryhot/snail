@@ -41,6 +41,6 @@ function snail {
     export __snail_frame__=$f
 }
 
-if [[ "$BASH_SOURCE" == "$0" ]]; then # called
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then # called
     snail "$@"
 fi
