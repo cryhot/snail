@@ -254,7 +254,10 @@ function mill {
 
 # scale VAR [MIN] [MAX]
 function scale {
-    echo dummy | read -r "$1" 2>/dev/null || {
+    zenity --version &>/dev/null || {
+        echo "${FUNCNAME[0]} : zenity cannot be launched"; return 2
+    } >&2
+    echo dummy | read -r "$1" &>/dev/null || {
         echo "${FUNCNAME[0]} : invalid identifier ‘$1’"; return 1
     } >&2
     local -a __val__=(/dev/shm/scale-$$-$1-*)
@@ -317,7 +320,7 @@ function scale {
         done < <(
             zenity --scale --print-partial --text="$1=" --title="Interactive variable modifier" \
             --value="$__val__" --min-value="$__min__" --max-value="$__max__" --step="$__step__" 2>/dev/null || {
-                echo "${FUNCNAME[0]} : zenity cannot be launched"
+                [[ $? != 1 ]] && echo "${FUNCNAME[0]} : zenity cannot be launched"
             } >&2
         )
     }&)
