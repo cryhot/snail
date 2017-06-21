@@ -312,11 +312,11 @@ function scale {
         done
     }&)
     ({ # push values (could be in foreground if an explicit call to the function with "&" is desired)
-        trap 'rm "$__shared__"' EXIT
-        while [ -n "$__val__" ]; do
+        trap 'rm -f "$__shared__"' EXIT
+        while true; do
             kill -s 0 $$ || exit # TODO: close zenity
             echo "$__val__" > "$__shared__"
-            read -r "__val__"
+            read -r __val__ || exit
         done < <(
             zenity --scale --print-partial --text="$1=" --title="Interactive variable modifier" \
             --value="$__val__" --min-value="$__min__" --max-value="$__max__" --step="$__step__" 2>/dev/null || {
