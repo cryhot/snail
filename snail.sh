@@ -183,6 +183,7 @@ function mill {
         unset __first_line__
         case $__mode__ in
         0 ) # QUIET
+            while read -t 0 -r; do read -r; done
             for __BREAK__ in 1 0; do
                 ((__BREAK__)) || break
                 (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
@@ -199,6 +200,7 @@ function mill {
                 echo "$__line__"
             done <<< "$@"
             [ -z "$__first_line__" ] && echo
+            while read -t 0 -r; do read -r; done
             for __BREAK__ in 1 0; do
                 ((__BREAK__)) || break
                 (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
@@ -215,6 +217,7 @@ function mill {
                     echo "$__line__"
                 done <<< "$@"
                 [ -z "$__first_line__" ] && echo
+                while read -t 0 -r; do read -r; done
                 for __BREAK__ in 1 0; do
                     ((__BREAK__)) || break
                     (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
@@ -227,7 +230,13 @@ function mill {
         esac
         ((__BREAK__)) && break;
         # LATENCY STAGE
-        while true; do
+        while read -t 0 -r; do read -r; done
+        if [ $__mode__ != 0 ]; then
+            ((__manual__)) && echo -ne "\e[01;38;5;202m[PRESS ENTER]\e[m"
+        fi
+        if ((__CONDS__==1)); then
+            read -r
+        else while true; do
             # test `-T`
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
             # test `-F`
@@ -250,15 +259,18 @@ function mill {
                 ((__BREAK__)) && break 2
             done
             # wait `PERIOD` / test `-M`
-            ((__CONDS__==1)) && read -r && break
             if ((__manual__)); then
-                read -t "$__period__" -r
-                [ $? -ge 128 ] || break # TODO: case __period__==0
+                if read -t "$__period__" -r </dev/null; then
+                    read -t 0 -r
+                else
+                    read -t "$__period__" -r
+                    [ $? -lt 128 ]
+                fi && break
             else
                 sleep "$__period__"
             fi
             ((__CONDS__)) || break
-        done
+        done fi
         # END OF CYCLE
     done
 }
