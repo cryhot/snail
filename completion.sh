@@ -120,6 +120,7 @@ function _mill {
                 COMPREPLY=($(compgen -W "
                     --period
                     --instant
+                    --manual
                     --timeout
                     --track-file
                     --condition

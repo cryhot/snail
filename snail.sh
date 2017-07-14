@@ -98,19 +98,20 @@ function track {
 }
 
 
-# mill [-p PERIOD|-i] [-q|-b|-B] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...
+# mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...
 function mill {
     local __STATUS__=0
     local __period__ __mode__
     local __timeout__
-    local -a __conditions__=()
+    local -i __manual__=0
     local -a __tracked_files__=()
+    local -a __conditions__=()
     local -i __CONDS__=0
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
-            --options "+p:iT:F:C:qbB" \
-            --longoptions "period:,instant,timeout:,track-file:,condition:,quiet,unbuffered,buffered" \
+            --options "+p:iT:F:C:MqbB" \
+            --longoptions "period:,instant,timeout:,track-file:,condition:,manual,quiet,unbuffered,buffered" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -123,14 +124,17 @@ function mill {
             __period__="$1"; shift ;;
         -i|--instant ) shift
             __period__=0 ;;
-        -T|--timeout ) shift; __CONDS__=1
+        -M|--manual ) shift; __CONDS__+=1
+            __manual__=1 ;;
+        -T|--timeout ) shift; __CONDS__+=2
             [ "$1" -ge "0" ] 2>/dev/null || {
                 echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             __timeout__="$1"; shift ;;
-        -F|--track-file ) shift; __CONDS__=1
+        #-V|--track-var ) shift; __CONDS__+=4
+        -F|--track-file ) shift; __CONDS__+=8
             __tracked_files__[${#__tracked_files__[@]}]="$1"; shift ;;
-        -C|--condition ) shift; __CONDS__=1
+        -C|--condition ) shift; __CONDS__+=16
             __conditions__[${#__conditions__[@]}]="$1"; shift ;;
         -q|--quiet ) shift
             __mode__=0 ;;
@@ -194,6 +198,7 @@ function mill {
                 [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                 echo "$__line__"
             done <<< "$@"
+            [ -z "$__first_line__" ] && echo
             for __BREAK__ in 1 0; do
                 ((__BREAK__)) || break
                 (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
@@ -209,6 +214,7 @@ function mill {
                     [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                     echo "$__line__"
                 done <<< "$@"
+                [ -z "$__first_line__" ] && echo
                 for __BREAK__ in 1 0; do
                     ((__BREAK__)) || break
                     (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
@@ -243,8 +249,14 @@ function mill {
                 done
                 ((__BREAK__)) && break 2
             done
-            # wait `PERIOD`
-            sleep "$__period__"
+            # wait `PERIOD` / test `-M`
+            ((__CONDS__==1)) && read -r && break
+            if ((__manual__)); then
+                read -t "$__period__" -r
+                [ $? -ge 128 ] || break # TODO: case __period__==0
+            else
+                sleep "$__period__"
+            fi
             ((__CONDS__)) || break
         done
         # END OF CYCLE
