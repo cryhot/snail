@@ -261,7 +261,7 @@ function mill {
             # wait `PERIOD` / test `-M`
             if ((__manual__)); then
                 if read -t "$__period__" -r </dev/null; then
-                    read -t 0 -r
+                    read -t 0 -r && read -r
                 else
                     read -t "$__period__" -r
                     [ $? -lt 128 ]
