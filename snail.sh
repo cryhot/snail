@@ -110,8 +110,8 @@ function mill {
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
-            --options "+p:iT:F:C:MqbB" \
-            --longoptions "period:,instant,timeout:,track-file:,condition:,manual,quiet,unbuffered,buffered" \
+            --options "+p:iMT:F:C:qbB" \
+            --longoptions "period:,instant,manual,timeout:,track-file:,condition:,quiet,unbuffered,buffered" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -235,7 +235,7 @@ function mill {
             ((__manual__)) && echo -ne "\e[01;38;5;202m[PRESS ENTER]\e[m"
         fi
         if ((__CONDS__==1)); then
-            read -r
+            read -r && echo -en "\e[1A\e[2K"
         else while true; do
             # test `-T`
             [ -n "$__timeout__" ] && (($(date +%s)>=__time_out__)) && break
@@ -265,7 +265,7 @@ function mill {
                 else
                     read -t "$__period__" -r
                     [ $? -lt 128 ]
-                fi && break
+                fi && echo -en "\e[1A\e[2K" && break
             else
                 sleep "$__period__"
             fi
