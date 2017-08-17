@@ -37,7 +37,7 @@ function _numval {
 
 # track completion
 function _track {
-    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F -- _minimal)" ]; then
         # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
@@ -85,7 +85,7 @@ function _track {
 
 # mill completion
 function _mill {
-    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F -- _minimal)" ]; then
         # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
@@ -157,7 +157,7 @@ function _increment {
 
 # how completion
 function _how {
-    if [ -z "$(declare -F _minimal 2>/dev/null)" ]; then
+    if [ -z "$(declare -F -- _minimal)" ]; then
         # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/bash_completion" ] &&
             source "/usr/share/bash-completion/bash_completion"
@@ -206,7 +206,7 @@ function _how {
 # mmake completion
 function _mmake {
     local OK_MAKE=0
-    if [ -z "$(declare -F _make 2>/dev/null)" ]; then
+    if [ -z "$(declare -F -- _make)" ]; then
         # shellcheck source=/dev/null
         [ -e "/usr/share/bash-completion/completions/make" ] &&
             source "/usr/share/bash-completion/completions/make" &&
@@ -219,10 +219,10 @@ function _mmake {
 }
 
 
-complete -F _track track
-complete -F _mill mill
-complete -F _scale scale
-complete -F _increment -- ++
-complete -F _increment -- --
-complete -F _how how
-complete -F _mmake mmake
+[ -n "$(declare -F -- track)" ] && complete -F _track track
+[ -n "$(declare -F -- mill)"  ] && complete -F _mill mill
+[ -n "$(declare -F -- scale)" ] && complete -F _scale scale
+[ -n "$(declare -F -- ++)"    ] && complete -F _increment -- ++
+[ -n "$(declare -F -- --)"    ] && complete -F _increment -- --
+[ -n "$(declare -F -- how)"   ] && complete -F _how how
+[ -n "$(declare -F -- mmake)" ] && complete -F _mmake mmake

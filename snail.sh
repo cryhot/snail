@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
-if [ -n "${SNAIL_PATH+_}" ]; then
-    [ "$SNAIL_PATH" != "$(dirname "${BASH_SOURCE[0]}")" ] && {
-        echo "SNAIL_PATH already defined"
-        [[ "${BASH_SOURCE[0]}" == "$0" ]] && return 1 || exit 1
-    } >&2
-else
-    SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
-    declare -r SNAIL_PATH
-fi
-[[ "${BASH_SOURCE[0]}" == "$0" ]] || {
-    nohup "$SNAIL_PATH/clean.sh" --wait $$ >/dev/null 2>&1 &
-}
+# if [ -n "${SNAIL_PATH+_}" ]; then
+#     [ "$SNAIL_PATH" != "$(dirname "${BASH_SOURCE[0]}")" ] && {
+#         echo "SNAIL_PATH already defined"
+#         [[ "${BASH_SOURCE[0]}" == "$0" ]] && return 1 || exit 1
+#     } >&2
+# else
+#     SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
+#     declare -r SNAIL_PATH
+# fi
+# [[ "${BASH_SOURCE[0]}" == "$0" ]] || {
+#     nohup "$SNAIL_PATH/clean.sh" --wait $$ >/dev/null 2>&1 &
+# }
 
-export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
-export MPS2=${MPS2-'\[\e[01;38;5;202m\]>\[\e[m\] '}
+# export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
+# export MPS2=${MPS2-'\[\e[01;38;5;202m\]>\[\e[m\] '}
 
 
 # track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
@@ -299,7 +299,7 @@ function scale {
     local __max__=${3-100}
     local __step__=1
     [ "$__min__" -eq "$__min__" ] 2>/dev/null || {
-        echo "${FUNCNAME[0]} : invalid integer expression ‘$__min__"; return 1
+        echo "${FUNCNAME[0]} : invalid integer expression ‘$__min__’"; return 1
     } >&2
     [ "$__max__" -eq "$__max__" ] 2>/dev/null || {
         echo "${FUNCNAME[0]} : invalid integer expression ‘$__max__’"; return 1
@@ -521,23 +521,32 @@ function mmake {
 }
 
 
-# shellcheck source=./boris.sh
-. "$SNAIL_PATH/boris.sh"
+# openfd FD
+function openfd {
+    { [ "$1" -ge "0" ] && [ "$1" -lt "1024" ]; } 2>/dev/null || {
+        echo "${FUNCNAME[0]} : invalid file descriptor ‘$1’"; return 1
+    } >&2
+    eval "command >&$1" 2>/dev/null && {
+        echo "${FUNCNAME[0]} : file descriptor ‘$1’ already opened"; return 2
+    } >&2
+    local PIPE
+    PIPE=$(mktemp -u)
+    mkfifo "$PIPE"
+    eval "exec $1<>$PIPE"
+    rm "$PIPE"
+}
 
-# shellcheck source=./completion.sh
-. "$SNAIL_PATH/completion.sh"
+# closefd FD
+function closefd {
+    { [ "$1" -ge "0" ] && [ "$1" -lt "1024" ]; } 2>/dev/null || {
+        echo "${FUNCNAME[0]} : invalid file descriptor ‘$1’"; return 1
+    } >&2
+    eval "exec $1>&-"
+}
 
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    trap "clear" EXIT
-    cd "$(dirname "$0")" || exit
-    # shellcheck disable=SC2016
-    mill -q -p 0.1 '
-        ++ FRAME 1 || ++ X -19 $(tput cols)
-        clear
-        echo
-        snail $FRAME $X
-        echo
-        echo ">>> source this script to load features"
-    '
-    # echo "source this script to load features" >&2 && exit 1
-fi
+
+# # shellcheck source=./boris.sh
+# . "$SNAIL_PATH/boris.sh"
+#
+# # shellcheck source=./completion.sh
+# . "$SNAIL_PATH/completion.sh"

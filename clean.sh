@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# clean.sh PID
+# clean.sh [-W] PID
 [[ "${BASH_SOURCE[0]}" == "$0" ]] || {
     echo "must not be sourced" >&2 && return 2
 }

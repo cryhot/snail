@@ -8,11 +8,11 @@ Just download the source :)
 ```sh
 git clone https://github.com/cryhot/snail.git $HOME/snail
 ```
-The code of [`snail.sh`](snail.sh) must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
+The code of [`SOURCEME.sh`](SOURCEME.sh) must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
 
 If you want permanent changes, just add this line to your `.bashrc` (admitting you used the directory `~/snail`) :
 ```sh
-. ~/snail/snail.sh
+source $HOME/snail/SOURCEME.sh
 ```
 **:warning: If you share your computer with other users, don't forget to remove write perms from the sourced file.**
 
@@ -25,7 +25,7 @@ If you want permanent changes, just add this line to your `.bashrc` (admitting y
 ### Description
 
 - **`mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...`**  
-  run a command in loop ([see more][man mill])  
+  run a command in loop; no subshell is created ([see more][man mill])  
 
 - **`scale VAR [MIN] [MAX]`**  
   spawn a scale the user can move to set a numeric value to a variable  
