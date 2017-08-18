@@ -1,22 +1,6 @@
 #!/usr/bin/env bash
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
-# if [ -n "${SNAIL_PATH+_}" ]; then
-#     [ "$SNAIL_PATH" != "$(dirname "${BASH_SOURCE[0]}")" ] && {
-#         echo "SNAIL_PATH already defined"
-#         [[ "${BASH_SOURCE[0]}" == "$0" ]] && return 1 || exit 1
-#     } >&2
-# else
-#     SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
-#     declare -r SNAIL_PATH
-# fi
-# [[ "${BASH_SOURCE[0]}" == "$0" ]] || {
-#     nohup "$SNAIL_PATH/clean.sh" --wait $$ >/dev/null 2>&1 &
-# }
-
-# export MPS1=${MPS1-'\[\e[01;38;5;202m\]mill\[\e[m\]:\[\e[01;34m\]\W\[\e[m\]\$ '}
-# export MPS2=${MPS2-'\[\e[01;38;5;202m\]>\[\e[m\] '}
-
 
 # track [-t|-T TIMEOUT] [-o|-a] [-g|-w] FILE...
 function track {
@@ -153,7 +137,7 @@ function mill {
     else # conditions specified
         __mode__=${__mode__-1}
     fi
-    local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
+    # local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
     local -r __period__ __mode__
     local -r __CONDS__ __timeout__ __tracked_files__ __conditions__
     # ((__mode__==2)) && ({ # cleaner
@@ -167,6 +151,25 @@ function mill {
     local -i __BREAK__
     local -a __files__ __files2__
     local -A __file_modif__
+    # DEFINE IO
+    case $__mode__ in
+    0 ) # QUIET
+        exec 513>&1 514>&2 ;;
+    1 ) # UNBUFFERED
+        exec 513>&1 514>&2 ;;
+    2 ) # BUFFERED
+        # TODO: try a PTY
+        local __buffer__
+        __buffer__=$(mktemp "/dev/shm/mill-$$-XXXXXXXX")
+        exec 512<"$__buffer__"
+        exec 513>"$__buffer__" 514>&513
+        rm "$__buffer__"; unset __buffer__
+        if ! { [ -x "$SNAIL_PATH/util/rewindfd" ] && [ -x "$SNAIL_PATH/util/seekfd" ]; } then
+            notify-send --urgency=critical --icon=face-uncertain \
+                "Hey! Snail is missing some files" \
+                "You should run the following command, or expect some memory leaks...\n\$ make -C $SNAIL_PATH"
+        fi &>/dev/null ;;
+    esac
     # CYCLE
     while true; do
         # RECORD CONDITIONS INFOS
@@ -180,54 +183,31 @@ function mill {
             __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
         done
         # EXECUTE COMMAND
-        unset __first_line__
-        case $__mode__ in
-        0 ) # QUIET
-            while read -t 0 -r; do read -r; done
-            for __BREAK__ in 1 0; do
-                ((__BREAK__)) || break
-                (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
-            done
-            ;;
-        1 ) # UNBUFFERED
-            clear
-            __ps1__=$(PS1="$MPS1" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
-            __ps2__=$(PS1="$MPS2" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
-            echo -n "$__ps1__"
-            while IFS='' read -r __line__; do
-                [ -n "$__line__" ] || continue
-                [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
-                echo "$__line__"
-            done <<< "$@"
-            [ -z "$__first_line__" ] && echo
-            while read -t 0 -r; do read -r; done
-            for __BREAK__ in 1 0; do
-                ((__BREAK__)) || break
-                (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
-            done
-            ;;
-        2 ) # BUFFERED
-            {
+        {
+            if ((__mode__!=0)); then # NOT QUIET
+                ((__mode__==1)) && clear # UNBUFFERED
                 __ps1__=$(PS1="$MPS1" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
                 __ps2__=$(PS1="$MPS2" "$BASH" --norc -i </dev/null 2>&1 | sed -n 's/^\(.*\)exit$/\1/p;')
-                echo -n "$__ps1__"
+                echo -n "$__ps1__" && unset __first_line__
                 while IFS='' read -r __line__; do
                     [ -n "$__line__" ] || continue
                     [ -z "$__first_line__" ] && __first_line__="no" || echo -n "$__ps2__"
                     echo "$__line__"
                 done <<< "$@"
                 [ -z "$__first_line__" ] && echo
-                while read -t 0 -r; do read -r; done
-                for __BREAK__ in 1 0; do
-                    ((__BREAK__)) || break
-                    (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
-                done
-            } &> "$__buffer__" # TODO: try a PTY
+            fi
+            while read -t 0 -r; do read -r; done
+            for __BREAK__ in 1 0; do
+                ((__BREAK__)) || break
+                (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
+            done
+        } 512<&- 1>&513- 2>&514-
+        if ((__mode__==2)); then # BUFFERED
             clear
-            cat "$__buffer__"
-            rm "$__buffer__" # does not works if interrupted
-            ;;
-        esac
+            cat <&512
+            "$SNAIL_PATH/util/rewindfd" 513 2>/dev/null &&
+            "$SNAIL_PATH/util/seekfd" 512 2>/dev/null
+        fi
         ((__BREAK__)) && break;
         # LATENCY STAGE
         while read -t 0 -r; do read -r; done
@@ -270,10 +250,11 @@ function mill {
                 sleep "$__period__"
             fi
             ((__CONDS__)) || break
-        done fi
+        done fi 512<&- 513>&- 514>&-
         # END OF CYCLE
     done
-}
+    exec 512<&- 513>&- 514>&-
+} 512<&- 513>&- 514>&-
 
 
 # scale VAR [MIN] [MAX]
@@ -339,7 +320,7 @@ function scale {
         trap 'rm -f "$__shared__"' EXIT
         while true; do
             kill -s 0 $$ || exit # TODO: close zenity
-            echo "$__val__" > "$__shared__"
+            echo "$__val__" >| "$__shared__"
             read -r __val__ || exit
         done < <(
             zenity --scale --print-partial --text="$1=" --title="Interactive variable modifier" \
@@ -544,9 +525,24 @@ function closefd {
     eval "exec $1>&-"
 }
 
+# seekfd FD [OFFSET] [WHENCE]
+function seekfd {
+    local -a ARGS=("$@")
+    if [ $# -ge 3 ]; then
+        case "${ARGS[3]}" in
+        0|SET|SEEK_SET|START)  ARGS[3]=0;;
+        1|CUR|SEEK_CUR|CURSOR) ARGS[3]=1;;
+        2|END|SEEK_END)        ARGS[3]=2;;
+        *) echo "${FUNCNAME[0]} : ‘${ARGS[3]}’ : bad whence" >&2; return 1;;
+        esac
+    fi
+    # set -- "${ARGS[@]}"
+    "$SNAIL_PATH/util/seekfd" "${ARGS[@]}"
+}
 
-# # shellcheck source=./boris.sh
-# . "$SNAIL_PATH/boris.sh"
-#
-# # shellcheck source=./completion.sh
-# . "$SNAIL_PATH/completion.sh"
+# rewindfd FD [OFFSET]
+function rewindfd {
+    local -a ARGS=("$@")
+    # set -- "${ARGS[@]}"
+    "$SNAIL_PATH/util/rewindfd" "${ARGS[@]}"
+}

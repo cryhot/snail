@@ -4,9 +4,10 @@
 :snail: _Make your shell interactive_
 
 ## Installation
-Just download the source :)
+Just download the source, then compile the build :)
 ```sh
 git clone https://github.com/cryhot/snail.git $HOME/snail
+make -C $HOME/snail
 ```
 The code of [`SOURCEME.sh`](SOURCEME.sh) must be executed directly in the current shell (use `.` or `source`) in order to access the functionalities.
 
