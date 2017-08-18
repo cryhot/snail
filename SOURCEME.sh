@@ -41,13 +41,29 @@ fi
 
 # ===== FEATURES ===== #
 
-# main module (mill track scale ++ -- how mmake openfd closefd)
-# shellcheck source=./boris.sh
+# main module
+# functions: mill track how mmake
+# dependencies: make
+# shellcheck source=./snail.sh
 source "$SNAIL_PATH/snail.sh"
 
-# easter-egg (snail)
-# shellcheck source=./boris.sh
-source "$SNAIL_PATH/boris.sh"
+# variable operations
+# functions: scale ++ --
+# dependencies: zenity gdb
+# shellcheck source=./snail_var.sh
+source "$SNAIL_PATH/snail_var.sh"
+
+# file descriptor operations
+# functions: openfd closefd seekfd rewindfd
+# dependencies: -
+# shellcheck source=./snail_fd.sh
+source "$SNAIL_PATH/snail_fd.sh"
+
+# easter-egg
+# functions: snail
+# dependencies: -
+# shellcheck source=./snail_boris.sh
+source "$SNAIL_PATH/snail_boris.sh"
 
 
 # ===== OTHER ===== #
@@ -59,6 +75,7 @@ source "$SNAIL_PATH/completion.sh"
 
 # ===== DEMO ===== #
 
+# Run this code when the file is not sourced
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     trap "clear" EXIT
     cd "$(dirname "$0")" || exit

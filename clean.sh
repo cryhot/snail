@@ -26,5 +26,5 @@ if ((__wait__)); then
 fi
 
 shopt -s nullglob
-rm "/dev/shm/mill-$1-"* 2>/dev/null
+# rm "/dev/shm/mill-$1-"* 2>/dev/null # obsolete
 rm "/dev/shm/scale-$1-"* 2>/dev/null
