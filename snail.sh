@@ -201,7 +201,7 @@ function mill {
                 ((__BREAK__)) || break
                 (exit "$__STATUS__"); eval -- "$@"; __STATUS__="$?"
             done
-        } 512<&- 1>&513- 2>&514-
+        } 1>&513 2>&514 512<&- 513>&- 514>&-
         if ((__mode__==2)); then # BUFFERED
             clear
             cat <&512
