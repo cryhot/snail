@@ -99,6 +99,15 @@ mmake
 # a lightweight syntax for a powerfull tool
 ```
 
+### Dependencies
+
+List of commands required to use all the features (some are more important, some are less) :
+- gcc
+- getopt
+- gdb
+- make
+- zenity
+
 -----
 _French people love snails_
 

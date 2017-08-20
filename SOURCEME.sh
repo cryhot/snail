@@ -41,9 +41,12 @@ fi
 
 # ===== FEATURES ===== #
 
+# global:
+# dependencies: getopt
+
 # main module
 # functions: mill track how mmake
-# dependencies: make
+# dependencies: make ./util/
 # shellcheck source=./snail.sh
 source "$SNAIL_PATH/snail.sh"
 
@@ -55,7 +58,7 @@ source "$SNAIL_PATH/snail_var.sh"
 
 # file descriptor operations
 # functions: openfd closefd seekfd rewindfd
-# dependencies: -
+# dependencies: ./util/
 # shellcheck source=./snail_fd.sh
 source "$SNAIL_PATH/snail_fd.sh"
 

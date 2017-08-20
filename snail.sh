@@ -137,15 +137,8 @@ function mill {
     else # conditions specified
         __mode__=${__mode__-1}
     fi
-    # local -r __buffer__="/dev/shm/mill-$$-$RANDOM$RANDOM"
     local -r __period__ __mode__
     local -r __CONDS__ __timeout__ __tracked_files__ __conditions__
-    # ((__mode__==2)) && ({ # cleaner
-    #     while kill -s 0 $$; do
-    #         sleep 9
-    #     done
-    #     rm "$__buffer__"
-    # }&) >/dev/null 2>&1
     local __ps1__ __ps2__ __first_line__ __line__ __time_out__
     local __file__ __condition__ # iterators
     local -i __BREAK__
