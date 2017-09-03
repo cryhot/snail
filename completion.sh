@@ -71,6 +71,7 @@ function _track {
                     --wildcard
                     --timeout
                     --delay
+                    --help
                 " -- "$CUR"))
             fi ;;
         -*[tT] ) arg="${CUR: -1}" ;;
@@ -127,6 +128,7 @@ function _mill {
                     --quiet
                     --unbuffered
                     --buffered
+                    --help
                 " -- "$CUR"))
             fi ;;
         -*[pTFC] ) arg="${CUR: -1}" ;;
@@ -191,6 +193,7 @@ function _how {
                 COMPREPLY=($(compgen -W "
                     --pipe-status
                     --pipe-status-all
+                    --help
                 " -- "$CUR"))
             fi ;;
         -*[p] ) arg="${CUR: -1}" ;;

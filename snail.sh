@@ -12,7 +12,7 @@ function track {
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+oagwt:T:" \
-            --longoptions "or,and,glob,wildcard,timeout:,delay:" \
+            --longoptions "or,and,glob,wildcard,timeout:,delay:,help" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -32,6 +32,8 @@ function track {
                 echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             delay="$1"; shift ;;
+        --help ) shift
+            "$SNAIL_PATH/util/wiki.sh" "man/man-track.md"; return 0;;
         -- ) shift; break ;;
         * ) break ;;
         esac
@@ -95,7 +97,7 @@ function mill {
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+p:iMT:F:C:qbB" \
-            --longoptions "period:,instant,manual,timeout:,track-file:,condition:,quiet,unbuffered,buffered" \
+            --longoptions "period:,instant,manual,timeout:,track-file:,condition:,quiet,unbuffered,buffered,help" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -126,6 +128,8 @@ function mill {
             __mode__=1 ;;
         -B|--buffered ) shift
             __mode__=2 ;;
+        --help ) shift
+            "$SNAIL_PATH/util/wiki.sh" "man/man-mill.md"; return 0;;
         -- ) shift; break ;;
         * ) break ;;
         esac
@@ -261,7 +265,7 @@ function how {
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
             --options "+p:P" \
-            --longoptions "pipe-status:,pipe-status-all" \
+            --longoptions "pipe-status:,pipe-status-all,help" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -274,6 +278,8 @@ function how {
             __PIPEINDEX__="$1"; shift ;;
         -P|--pipe-status-all ) shift
             __PIPEINDEX__="@" ;;
+        --help ) shift
+            "$SNAIL_PATH/util/wiki.sh" "man/man-how.md"; return 0;;
         -- ) shift; break ;;
         * ) break ;;
         esac

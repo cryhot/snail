@@ -11,6 +11,7 @@ if [ -n "${SNAIL_PATH+_}" ]; then
 else
     SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
     declare -r SNAIL_PATH
+    export SNAIL_PATH
 fi
 
 # Remove the files generated during this session.
