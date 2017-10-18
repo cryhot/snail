@@ -2,7 +2,7 @@
 # Copyright (c) 2017 Jean-Raphaël Gaglione
 
 if [ -f "$SNAIL_PATH/wiki/$1" ]; then
-    if command -v pandoc && command -v lynx &>/dev/null; then
+    if command -v pandoc &>/dev/null && command -v lynx &>/dev/null; then
         pandoc "$SNAIL_PATH/wiki/$1" | lynx -stdin
     elif command -v mdless &>/dev/null; then
         mdless "$SNAIL_PATH/wiki/$1"

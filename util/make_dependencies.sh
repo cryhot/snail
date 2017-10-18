@@ -26,7 +26,7 @@ while [ ${#EXPLORE[@]} -gt 0 ]; do
     DEP["$TARGET"]=1
     unset EXPLORE["$TARGET"]
     # shellcheck disable=SC2013
-    for D in $(sed -n "/^${TARGET//\//\\\/}:/ p;" <<< "$MDB" | sed -e "s/^${TARGET//\//\\\/}://g"); do
+    for D in $(sed -n "/^${TARGET//\//\\/}:/ p;" <<< "$MDB" | sed -e "s/^${TARGET//\//\\/}://g"); do
         [ -n "${DEP["$D"]}" ] && continue
         EXPLORE["$D"]=1
     done
