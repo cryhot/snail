@@ -42,7 +42,7 @@ function track {
     local -A modif
     # RECORD INFOS
     if ((glob)); then
-        eval "$(shopt -s nullglob; files=($@); declare -p files)"
+        eval "$(shopt -s nullglob; IFS=""; files=($@); declare -p files)"
     else
         files=("$@")
     fi
@@ -64,14 +64,14 @@ function track {
         count=0
         for file in "${!modif[@]}"; do
             if ! [ "$(stat -c "%Z" "$file" 2>/dev/null)" = "${modif[$file]}" ] 2>/dev/null; then
-                ((and)) && unset modif[$file] || return 0
+                ((and)) && unset modif["$file"] || return 0
             else
                 count+=1
             fi
         done
-        ((count)) || return 0
+        ((and && count==0)) && return 0
         if ((glob && ! and)); then
-            eval "$(shopt -s nullglob; list=($@); declare -p list)"
+            eval "$(shopt -s nullglob; IFS=""; list=($@); declare -p list)"
             [[ $# -lt 1 ]] && list=(./*)
             [ ${#list[@]} -eq ${#files[@]} ] || return 0
             for file in "${!files[@]}"; do
@@ -174,7 +174,8 @@ function mill {
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
         # record `-F`
         __file_modif__=()
-        eval "$(shopt -s nullglob; __files__=(${__tracked_files__[@]}); \
+        eval "$(shopt -s nullglob; IFS="|"; \
+            __files__=(${__tracked_files__[@]}); \
             declare -p __files__)" || __files__=()
         for __file__ in "${__files__[@]}"; do
             __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
@@ -221,7 +222,8 @@ function mill {
                 [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null ||
                     break 2
             done
-            eval "$(shopt -s nullglob; __files2__=(${__tracked_files__[@]}); \
+            eval "$(shopt -s nullglob; IFS="|"; \
+                __files2__=(${__tracked_files__[@]}); \
                 declare -p __files2__)" || __files2__=()
             [ ${#__files2__[@]} -eq ${#__files__[@]} ] || break
             for __file__ in "${!__files__[@]}"; do
