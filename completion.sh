@@ -124,6 +124,7 @@ function _mill {
                     --manual
                     --timeout
                     --track-file
+                    --track-command-files
                     --condition
                     --quiet
                     --unbuffered

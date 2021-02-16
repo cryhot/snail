@@ -84,20 +84,21 @@ function track {
 }
 
 
-# mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...
+# mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-G] [-C CONDITION] COMMAND...
 function mill {
     local __STATUS__=0
     local __period__ __mode__
     local __timeout__
     local -i __manual__=0
     local -a __tracked_files__=()
+    local -i __track_command_files__=0
     local -a __conditions__=()
     local -i __CONDS__=0
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \
-            --options "+p:iMT:F:C:qbB" \
-            --longoptions "period:,instant,manual,timeout:,track-file:,condition:,quiet,unbuffered,buffered,help" \
+            --options "+p:iMT:F:GC:qbB" \
+            --longoptions "period:,instant,manual,timeout:,track-file:,--track-command-files,condition:,quiet,unbuffered,buffered,help" \
             -- "$@")" || return 1
         eval set -- "$__OPTS__"
     fi
@@ -119,9 +120,14 @@ function mill {
             __timeout__="$1"; shift ;;
         #-V|--track-var ) shift; ((__CONDS__|=4))
         -F|--track-file ) shift; ((__CONDS__|=8))
-            __tracked_files__[${#__tracked_files__[@]}]="$1"; shift ;;
+            eval "$(set -f; IFS="|";
+                # shellcheck disable=SC2030,SC2031
+                __tracked_files__+=($1);
+                declare -p __tracked_files__)"; shift ;;
+        -G|--track-command-files ) shift;
+            __track_command_files__=1 ;;
         -C|--condition ) shift; ((__CONDS__|=16))
-            __conditions__[${#__conditions__[@]}]="$1"; shift ;;
+            __conditions__+=("$1"); shift ;;
         -q|--quiet ) shift
             __mode__=0 ;;
         -b|--unbuffered ) shift
@@ -134,8 +140,15 @@ function mill {
         * ) break ;;
         esac
     done
-    [ -t 1 ] || __mode__=${__mode__-0} # non interactive
+    if ((__track_command_files__)); then
+        ((__CONDS__|=8))
+        eval "$(set -f; IFS=$' \t\n;|&$()<>';
+            # shellcheck disable=SC2030,SC2031
+            __tracked_files__+=($@);
+            declare -p __tracked_files__)"
+    fi
     __period__=${__period__-0.2}
+    [ -t 1 ] || __mode__=${__mode__-0} # non interactive
     if ! ((__CONDS__)); then # no conditions
         __mode__=${__mode__-2}
     else # conditions specified
@@ -168,14 +181,15 @@ function mill {
         fi &>/dev/null ;;
     esac
     # CYCLE
+    declare -p __conditions__
     while true; do
         # RECORD CONDITIONS INFOS
         # record `-T`
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
         # record `-F`
         __file_modif__=()
-        eval "$(shopt -s nullglob; IFS="|"; \
-            __files__=(${__tracked_files__[@]}); \
+        eval "$(shopt -s nullglob; IFS="";
+            __files__=(${__tracked_files__[@]});
             declare -p __files__)" || __files__=()
         for __file__ in "${__files__[@]}"; do
             __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
@@ -222,8 +236,8 @@ function mill {
                 [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null ||
                     break 2
             done
-            eval "$(shopt -s nullglob; IFS="|"; \
-                __files2__=(${__tracked_files__[@]}); \
+            eval "$(shopt -s nullglob; IFS="";
+                __files2__=(${__tracked_files__[@]});
                 declare -p __files2__)" || __files2__=()
             [ ${#__files2__[@]} -eq ${#__files__[@]} ] || break
             for __file__ in "${!__files__[@]}"; do

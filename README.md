@@ -1,7 +1,7 @@
 # Snail
 [![License](http://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 
-:snail: _Make your shell interactive_
+:snail: _Make your shell interactive and semi-automatic_
 
 ## Installation
 Just download the source, then compile the build :)
@@ -25,7 +25,7 @@ source $HOME/snail/SOURCEME.sh
 
 ### Description
 
-- **`mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-C CONDITION] COMMAND...`**  
+- **`mill [-p PERIOD|-i] [-q|-b|-B] [-M] [-T TIMEOUT] [-F FILE] [-G] [-C CONDITION] COMMAND...`**  
   run a command in loop; no subshell is created ([see more][man mill])  
 
 - **`scale VAR [MIN] [MAX]`**  
