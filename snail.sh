@@ -110,17 +110,17 @@ function mill {
             __period__="$1"; shift ;;
         -i|--instant ) shift
             __period__=0 ;;
-        -M|--manual ) shift; __CONDS__+=1
+        -M|--manual ) shift; ((__CONDS__|=1))
             __manual__=1 ;;
-        -T|--timeout ) shift; __CONDS__+=2
+        -T|--timeout ) shift; ((__CONDS__|=2))
             [ "$1" -ge "0" ] 2>/dev/null || {
                 echo "${FUNCNAME[0]} : invalid positive integer expression ‘$1’"; return 1
             } >&2
             __timeout__="$1"; shift ;;
-        #-V|--track-var ) shift; __CONDS__+=4
-        -F|--track-file ) shift; __CONDS__+=8
+        #-V|--track-var ) shift; ((__CONDS__|=4))
+        -F|--track-file ) shift; ((__CONDS__|=8))
             __tracked_files__[${#__tracked_files__[@]}]="$1"; shift ;;
-        -C|--condition ) shift; __CONDS__+=16
+        -C|--condition ) shift; ((__CONDS__|=16))
             __conditions__[${#__conditions__[@]}]="$1"; shift ;;
         -q|--quiet ) shift
             __mode__=0 ;;
@@ -160,7 +160,7 @@ function mill {
         __buffer__=$(mktemp "/dev/shm/mill-$$-XXXXXXXX")
         exec 512<"$__buffer__"
         exec 513>"$__buffer__" 514>&513
-        rm "$__buffer__"; unset __buffer__
+        rm -f "$__buffer__"; unset __buffer__
         if ! { [ -x "$SNAIL_PATH/util/rewindfd" ] && [ -x "$SNAIL_PATH/util/seekfd" ]; } then
             notify-send --urgency=critical --icon=face-uncertain \
                 "Hey! Snail is missing some files" \
@@ -262,7 +262,7 @@ function how {
     local -i __STATUS__; local -a __PIPESTATUS__
     local -i __EVAL__=0
     local __PIPEINDEX__=
-    (($#)) && [ "${@: -1}" = "--" ] && __EVAL__=1
+    (($#)) && [ "${*: -1}" = "--" ] && __EVAL__=1
     if getopt --test > /dev/null; [[ $? -eq 4 ]]; then
         local __OPTS__
         __OPTS__="$(getopt --name "${FUNCNAME[0]}" \

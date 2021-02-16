@@ -4,12 +4,12 @@
 # This variable is necessary for some features : do not comment these lines.
 # SNAIL_PATH is made readonly.
 if [ -n "${SNAIL_PATH+_}" ]; then
-    [ "$SNAIL_PATH" != "$(dirname "${BASH_SOURCE[0]}")" ] && {
+    [ "$SNAIL_PATH" != "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" ] && {
         echo "SNAIL_PATH already defined"
         [[ "${BASH_SOURCE[0]}" == "$0" ]] && return 1 || exit 1
     } >&2
 else
-    SNAIL_PATH="$(dirname "${BASH_SOURCE[0]}")"
+    SNAIL_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
     declare -r SNAIL_PATH
     export SNAIL_PATH
 fi
