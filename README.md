@@ -1,7 +1,8 @@
 # Snail
-[![License](http://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/cryhot/snail?style=flat)](LICENSE)
+[![shellcheck](https://img.shields.io/github/workflow/status/cryhot/snail/shellcheck?label=shellcheck&logo=github&style=flat)](https://github.com/cryhot/snail/actions?query=workflow:shellcheck)
 
-:snail: _Make your shell interactive and semi-automatic_
+_Make your shell alive..._ :snail:
 
 ## Installation
 Just download the source, then compile the build :)

@@ -1,0 +1,36 @@
+name: shellcheck
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - '**.sh'
+      - '**.yml'
+
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+  schedule:
+    - cron: '9 9 9 9 *'
+
+
+jobs:
+
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck -V
+
+      - name: Run shellcheck
+        run: |
+          shellcheck **/*.sh
+          echo "shellcheck OK"
