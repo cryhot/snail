@@ -1,6 +1,7 @@
 # Snail
 [![License](https://img.shields.io/github/license/cryhot/snail?style=flat)](LICENSE)
 [![shellcheck](https://img.shields.io/github/workflow/status/cryhot/snail/shellcheck?label=shellcheck&logo=github&style=flat)](https://github.com/cryhot/snail/actions?query=workflow:shellcheck)
+[![doc](https://img.shields.io/badge/doc-github_wiki-informational?style=flat)](https://github.com/cryhot/snail/wiki)
 
 _Make your shell alive..._ :snail:
 

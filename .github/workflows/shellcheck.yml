@@ -32,5 +32,5 @@ jobs:
 
       - name: Run shellcheck
         run: |
-          shellcheck **/*.sh
+          make check
           echo "shellcheck OK"
