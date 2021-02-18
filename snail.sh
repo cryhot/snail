@@ -38,25 +38,27 @@ function track {
         * ) break ;;
         esac
     done
+    if [[ $# -lt 1 ]]; then
+        set -- "*"
+        glob=1
+    fi
     local -a files
     local -A modif
     # RECORD INFOS
     if ((glob)); then
-        eval "$(shopt -s nullglob; IFS=""; files=($@); declare -p files)"
+        # shellcheck disable=SC2068,SC2048,SC2086
+        mapfile -d '' files < <(shopt -s nullglob; IFS=""; (($#)) && printf "%s\0" $@)
     else
         files=("$@")
     fi
-    if [[ $# -lt 1 ]]; then
-        files=(./*)
-        glob=1
-    fi
     for file in "${files[@]}"; do
+        [ -z "$file" ] && continue
         modif[$file]=$(stat -c "%Z" "$file" 2>/dev/null) # || {
         #     echo "${FUNCNAME[0]} : cannot track ‘$file’"; return 1
         # } >&2
     done
     [ -n "$timeout" ] && ((timeout+=$(date +%s)))
-    local list
+    local -a list
     # TRACK CHANGES
     ((delay>=0)) && sleep "$delay" && timeout=${timeout:-0}
     local -i count
@@ -71,8 +73,8 @@ function track {
         done
         ((and && count==0)) && return 0
         if ((glob && ! and)); then
-            eval "$(shopt -s nullglob; IFS=""; list=($@); declare -p list)"
-            [[ $# -lt 1 ]] && list=(./*)
+            # shellcheck disable=SC2068,SC2048,SC2086
+            mapfile -d '' list < <(shopt -s nullglob; IFS=""; printf "%s\0" $@)
             [ ${#list[@]} -eq ${#files[@]} ] || return 0
             for file in "${!files[@]}"; do
                 [ "${list[$file]}" = "${files[$file]}" ] || return 0
@@ -120,10 +122,8 @@ function mill {
             __timeout__="$1"; shift ;;
         #-V|--track-var ) shift; ((__CONDS__|=4))
         -F|--track-file ) shift; ((__CONDS__|=8))
-            eval "$(set -f; IFS="|";
-                # shellcheck disable=SC2030,SC2031
-                __tracked_files__+=($1);
-                declare -p __tracked_files__)"; shift ;;
+            # shellcheck disable=SC2068,SC2048,SC2086
+            mapfile -d '' -O "${#__tracked_files__[@]}" __tracked_files__ < <(set -f; IFS="|"; printf "%s\0" $1); shift ;;
         -G|--track-command-files ) shift;
             __track_command_files__=1 ;;
         -C|--condition ) shift; ((__CONDS__|=16))
@@ -142,10 +142,8 @@ function mill {
     done
     if ((__track_command_files__)); then
         ((__CONDS__|=8))
-        eval "$(set -f; IFS=$' \t\n;|&$()<>';
-            # shellcheck disable=SC2030,SC2031
-            __tracked_files__+=($@);
-            declare -p __tracked_files__)"
+        # shellcheck disable=SC2068,SC2048,SC2086
+        mapfile -d '' -O "${#__tracked_files__[@]}" __tracked_files__ < <(set -f; IFS=$' \t\n;|&$()<>'; (($#)) && printf "%s\0" $@)
     fi
     __period__=${__period__-0.2}
     [ -t 1 ] || __mode__=${__mode__-0} # non interactive
@@ -181,17 +179,16 @@ function mill {
         fi &>/dev/null ;;
     esac
     # CYCLE
-    declare -p __conditions__
     while true; do
         # RECORD CONDITIONS INFOS
         # record `-T`
         [ -n "$__timeout__" ] && __time_out__=$(($(date +%s)+__timeout__))
         # record `-F`
         __file_modif__=()
-        eval "$(shopt -s nullglob; IFS="";
-            __files__=(${__tracked_files__[@]});
-            declare -p __files__)" || __files__=()
+        # shellcheck disable=SC2068,SC2048,SC2086
+        mapfile -d '' __files__ < <(shopt -s nullglob; IFS=""; ((${#__tracked_files__[@]})) && printf "%s\0" ${__tracked_files__[@]})
         for __file__ in "${__files__[@]}"; do
+            [ -z "$__file__" ] && continue
             __file_modif__[$__file__]=$(stat -c "%Z" "$__file__" 2>/dev/null)
         done
         # EXECUTE COMMAND
@@ -236,9 +233,8 @@ function mill {
                 [ "$(stat -c "%Z" "$__file__" 2>/dev/null)" = "${__file_modif__[$__file__]}" ] 2>/dev/null ||
                     break 2
             done
-            eval "$(shopt -s nullglob; IFS="";
-                __files2__=(${__tracked_files__[@]});
-                declare -p __files2__)" || __files2__=()
+            # shellcheck disable=SC2068,SC2048,SC2086
+            mapfile -d '' __files2__ < <(shopt -s nullglob; IFS=""; ((${#__tracked_files__[@]})) && printf "%s\0" ${__tracked_files__[@]})
             [ ${#__files2__[@]} -eq ${#__files__[@]} ] || break
             for __file__ in "${!__files__[@]}"; do
                 [ "${__files2__[$__file__]}" = "${__files__[$__file__]}" ] || break 2
